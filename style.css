@@ -12,6 +12,8 @@ body {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #gameContainer {
@@ -27,6 +29,9 @@ body {
 canvas {
   border-radius: 16px;
   box-shadow: 0 0 40px rgba(0, 255, 255, 0.3), 0 0 80px rgba(138, 43, 226, 0.2);
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 /* ── Sidebar ── */
@@ -38,6 +43,7 @@ canvas {
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   max-height: 600px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sidebar-title {
@@ -72,6 +78,34 @@ canvas {
 .stat-value.lives { color: #ff6b6b; }
 .stat-value.wave { color: #00ff88; }
 .stat-value.score { color: #e040fb; }
+.stat-value.kills { color: #ff9800; }
+
+/* ── Wave Progress Bar ── */
+#waveProgressBar {
+  margin-bottom: 10px;
+  padding: 6px 0;
+}
+.wave-progress-label {
+  color: #aaa;
+  font-size: 11px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.wave-progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.wave-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00ff88, #00bcd4);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
 
 /* ── Tower Buttons ── */
 .tower-btn {
@@ -147,7 +181,6 @@ canvas {
 
 .info-btn:hover:not(:disabled) { transform: scale(1.05); }
 .info-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
 #upgradeBtn {
   background: linear-gradient(180deg, #00bcd4, #006994);
   color: white;
@@ -225,7 +258,6 @@ canvas {
 }
 
 #gameOverlay h1 { font-size: 48px; margin-bottom: 20px; }
-
 #gameOverlay.victory h1 {
   color: #00ff88;
   text-shadow: 0 0 30px #00ff88;
@@ -236,18 +268,8 @@ canvas {
   text-shadow: 0 0 30px #ff6b6b;
 }
 
-#gameOverlay p {
-  font-size: 24px;
-  color: #ffd700;
-  margin-bottom: 10px;
-}
-
-#gameOverlay .score-text {
-  font-size: 18px;
-  color: #e040fb;
-  margin-bottom: 20px;
-}
-
+#gameOverlay p { font-size: 24px; color: #ffd700; margin-bottom: 10px; }
+#gameOverlay .score-text { font-size: 18px; color: #e040fb; margin-bottom: 20px; }
 #restartBtn {
   padding: 15px 40px;
   font-size: 18px;
@@ -281,7 +303,7 @@ canvas {
 .hidden { display: none !important; }
 
 /* ═══════════════════════════════════════════════════════ */
-/* LOBBY SCREEN                                          */
+/* LOBBY SCREEN */
 /* ═══════════════════════════════════════════════════════ */
 #lobby {
   position: fixed;
@@ -409,6 +431,23 @@ canvas {
   transform: scale(1.08);
   box-shadow: 0 0 50px rgba(233, 30, 99, 0.8);
 }
+.lobby-changelog-btn {
+  margin-top: 12px;
+  padding: 10px 30px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #00ffff;
+  background: rgba(0, 255, 255, 0.1);
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.lobby-changelog-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: #00ffff;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
 .lobby-highscore {
   margin-top: 18px;
   font-size: 14px;
@@ -417,7 +456,97 @@ canvas {
 }
 
 /* ═══════════════════════════════════════════════════════ */
-/* POWER-UP BAR                                          */
+/* CHANGELOG */
+/* ═══════════════════════════════════════════════════════ */
+#changelog {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(5px);
+}
+.changelog-content {
+  position: relative;
+  background: linear-gradient(180deg, #1e1e3f 0%, #2d2d5a 100%);
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 60px rgba(0, 255, 255, 0.2);
+}
+.changelog-content h2 {
+  color: #00ffff;
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+.changelog-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: 2px solid #555;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.changelog-close:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+.changelog-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.changelog-entry {
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid #00ffff;
+}
+.changelog-entry:first-child {
+  border-left-color: #00ff88;
+}
+.cl-version {
+  font-size: 18px;
+  font-weight: bold;
+  color: #00ff88;
+}
+.changelog-entry:first-child .cl-version {
+  color: #ffd700;
+}
+.cl-date {
+  font-size: 14px;
+  color: #888;
+}
+.changelog-entry ul {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+.changelog-entry li {
+  color: #ccc;
+  font-size: 13px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* POWER-UP BAR */
 /* ═══════════════════════════════════════════════════════ */
 #powerUpBar {
   margin-top: 10px;
@@ -456,7 +585,7 @@ canvas {
 }
 
 /* ═══════════════════════════════════════════════════════ */
-/* COMBO DISPLAY                                         */
+/* COMBO DISPLAY */
 /* ═══════════════════════════════════════════════════════ */
 #comboDisplay {
   margin-top: 8px;
@@ -502,7 +631,7 @@ canvas {
 }
 
 /* ═══════════════════════════════════════════════════════ */
-/* LOBBY BUTTON IN OVERLAY                               */
+/* LOBBY BUTTON IN OVERLAY */
 /* ═══════════════════════════════════════════════════════ */
 #lobbyBtn {
   margin-top: 12px;
@@ -520,4 +649,75 @@ canvas {
   transform: scale(1.05);
   border-color: #00ffff;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* RESPONSIVE — TABLET */
+/* ═══════════════════════════════════════════════════════ */
+@media (max-width: 1000px) {
+  body { align-items: flex-start; padding-top: 10px; }
+  #gameContainer { flex-direction: column; align-items: center; gap: 10px; }
+  #sidebar { width: 100%; max-width: 700px; max-height: none; border-radius: 12px; padding: 15px; }
+  .stat-box { display: inline-block; width: 18%; margin-right: 2%; vertical-align: top; }
+  .tower-btn { display: inline-block; width: 48%; vertical-align: top; margin-right: 2%; }
+  #towerInfo { display: none; }
+  #towerInfo.active { display: flex; flex-wrap: wrap; gap: 8px; }
+  #towerInfo .info-stat { flex: 1 1 100%; }
+  .info-btn { width: 48%; }
+  #instructions { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* RESPONSIVE — MOBILE */
+/* ═══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  body { overflow-y: auto; overflow-x: hidden; align-items: flex-start; }
+  #gameContainer { flex-direction: column; gap: 8px; padding: 8px; width: 100%; }
+  #gameArea { width: 100%; }
+  canvas { width: 100% !important; height: auto !important; border-radius: 12px; }
+  #sidebar { width: 100%; max-height: none; border-radius: 12px; padding: 12px; }
+  .sidebar-title { font-size: 16px; margin-bottom: 10px; }
+  .stat-box { padding: 8px; margin-bottom: 6px; }
+  .stat-value { font-size: 18px; }
+  .stat-label { font-size: 10px; }
+  .tower-btn { padding: 10px; margin-bottom: 6px; }
+  .tower-icon { font-size: 20px; }
+  .tower-btn .tower-name { font-size: 13px; }
+  .tower-btn .tower-desc { font-size: 10px; }
+  #startWaveBtn { padding: 12px; font-size: 14px; }
+  #instructions { display: none; }
+  #gameOverlay h1 { font-size: 32px; }
+  #gameOverlay p { font-size: 18px; }
+  #restartBtn { padding: 12px 30px; font-size: 16px; }
+  #lobbyBtn { padding: 10px 30px; font-size: 14px; }
+  .lobby-title { font-size: 36px; }
+  .lobby-subtitle { font-size: 14px; }
+  .lobby-content { padding: 25px 20px; }
+  .lobby-start-btn { padding: 14px 40px; font-size: 18px; }
+  .diff-btn, .map-btn { padding: 8px 12px; font-size: 12px; margin: 3px; }
+  .lobby-features { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .lobby-feature { font-size: 11px; padding: 6px 8px; }
+  .changelog-content { padding: 20px; }
+  .changelog-content h2 { font-size: 22px; }
+  .changelog-entry li { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  .lobby-title { font-size: 28px; }
+  .lobby-content { padding: 20px 15px; }
+  .lobby-start-btn { padding: 12px 30px; font-size: 16px; }
+  .diff-btn, .map-btn { padding: 6px 10px; font-size: 11px; margin: 2px; }
+  .lobby-features { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .lobby-feature { font-size: 10px; padding: 5px 6px; }
+  .stat-box { padding: 6px; }
+  .stat-value { font-size: 16px; }
+  .tower-btn { padding: 8px; }
+  .tower-icon { font-size: 18px; }
+  .tower-btn .tower-name { font-size: 12px; }
+  .tower-btn .tower-cost { font-size: 11px; }
+  .tower-btn .tower-desc { font-size: 9px; }
+  #startWaveBtn { padding: 10px; font-size: 13px; }
+  .speed-btn { padding: 6px; font-size: 11px; }
+  #gameOverlay h1 { font-size: 24px; }
+  #gameOverlay p { font-size: 14px; }
 }

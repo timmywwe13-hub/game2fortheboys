@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>🏰 Tower Defense</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -39,7 +39,52 @@
       </div>
 
       <button class="lobby-start-btn" onclick="startGame()">🎮 Start Game</button>
+      <button class="lobby-changelog-btn" onclick="toggleChangelog()">📜 Update Log</button>
       <div class="lobby-highscore" id="lobbyHighScore">🏆 Best Score: 0</div>
+    </div>
+  </div>
+
+  <!-- ═══════ CHANGELOG ═══════ -->
+  <div id="changelog" class="hidden">
+    <div class="changelog-content">
+      <h2>📜 Update Log</h2>
+      <button class="changelog-close" onclick="toggleChangelog()">✕</button>
+      <div class="changelog-entries">
+        <div class="changelog-entry">
+          <span class="cl-version">v2.0</span>
+          <span class="cl-date">— Latest</span>
+          <ul>
+            <li>🌿 Nature backgrounds — grass, trees, flowers, water, butterflies &amp; birds on every map</li>
+            <li>📱 Full mobile &amp; touch support — play on any screen size</li>
+            <li>📜 In-game Update Log added</li>
+            <li>🌊 Wave progress bar during combat</li>
+            <li>💀 Kill counter — track total enemies defeated</li>
+            <li>🎵 Sound effects for tower shots, enemy deaths, power-ups &amp; more</li>
+            <li>✨ Screen shake on boss kills &amp; critical hits</li>
+            <li>🌸 Ambient nature particles (leaves, petals) floating across the map</li>
+            <li>🗺️ Mini-map indicator showing enemy positions</li>
+            <li>🐛 Bug fixes &amp; performance improvements</li>
+          </ul>
+        </div>
+        <div class="changelog-entry">
+          <span class="cl-version">v1.0</span>
+          <span class="cl-date">— Launch</span>
+          <ul>
+            <li>🏹 6 Tower Types: Arrow, Cannon, Ice, Lightning, Sniper, Poison</li>
+            <li>👾 5 Enemy Types: Grunt, Scout, Brute, Medic, Overlord</li>
+            <li>🗺️ 3 Maps: Classic, Zigzag, Spiral</li>
+            <li>⚔️ 3 Difficulty Levels: Easy, Normal, Hard</li>
+            <li>⚡ Power-up System: Double Gold, Damage Boost, Heal, Freeze</li>
+            <li>🔥 Combo System with score multipliers</li>
+            <li>💥 Critical Hit System</li>
+            <li>🏆 High Score tracking</li>
+            <li>⬆️ Tower Upgrades (up to Level 5)</li>
+            <li>💰 Tower Selling</li>
+            <li>⏩ Speed Controls: 1×, 2×, 3×</li>
+            <li>🔄 Auto-wave toggle</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -75,31 +120,49 @@
         <div class="stat-label">🏆 Score</div>
         <div class="stat-value score" id="scoreDisplay">0</div>
       </div>
+      <div class="stat-box">
+        <div class="stat-label">💀 Kills</div>
+        <div class="stat-value kills" id="killsDisplay">0</div>
+      </div>
+
+      <!-- Wave Progress Bar -->
+      <div id="waveProgressBar">
+        <div class="wave-progress-label">Wave Progress</div>
+        <div class="wave-progress-track">
+          <div class="wave-progress-fill" id="waveProgressFill"></div>
+        </div>
+      </div>
 
       <div class="sidebar-title" style="margin-top:15px;">🗼 Towers</div>
 
       <button class="tower-btn" data-tower="arrow" onclick="selectTower('arrow')">
-        <div><span class="tower-icon">🏹</span><span class="tower-name">Arrow Tower</span> <span class="tower-cost">💰 50</span></div>
+        <div><span class="tower-icon">🏹</span><span class="tower-name">Arrow Tower</span>
+        <span class="tower-cost">💰 50</span></div>
         <div class="tower-desc">Fast attack, low damage [1]</div>
       </button>
       <button class="tower-btn" data-tower="cannon" onclick="selectTower('cannon')">
-        <div><span class="tower-icon">💣</span><span class="tower-name">Cannon Tower</span> <span class="tower-cost">💰 100</span></div>
+        <div><span class="tower-icon">💣</span><span class="tower-name">Cannon Tower</span>
+        <span class="tower-cost">💰 100</span></div>
         <div class="tower-desc">Slow, high damage + splash [2]</div>
       </button>
       <button class="tower-btn" data-tower="ice" onclick="selectTower('ice')">
-        <div><span class="tower-icon">❄️</span><span class="tower-name">Ice Tower</span> <span class="tower-cost">💰 75</span></div>
+        <div><span class="tower-icon">❄️</span><span class="tower-name">Ice Tower</span>
+        <span class="tower-cost">💰 75</span></div>
         <div class="tower-desc">Slows enemies, medium dmg [3]</div>
       </button>
       <button class="tower-btn" data-tower="lightning" onclick="selectTower('lightning')">
-        <div><span class="tower-icon">⚡</span><span class="tower-name">Lightning Tower</span> <span class="tower-cost">💰 150</span></div>
+        <div><span class="tower-icon">⚡</span><span class="tower-name">Lightning Tower</span>
+        <span class="tower-cost">💰 150</span></div>
         <div class="tower-desc">Chain lightning to 3 enemies [4]</div>
       </button>
       <button class="tower-btn" data-tower="sniper" onclick="selectTower('sniper')">
-        <div><span class="tower-icon">🎯</span><span class="tower-name">Sniper Tower</span> <span class="tower-cost">💰 125</span></div>
+        <div><span class="tower-icon">🎯</span><span class="tower-name">Sniper Tower</span>
+        <span class="tower-cost">💰 125</span></div>
         <div class="tower-desc">Very long range, massive dmg [5]</div>
       </button>
       <button class="tower-btn" data-tower="poison" onclick="selectTower('poison')">
-        <div><span class="tower-icon">☠️</span><span class="tower-name">Poison Tower</span> <span class="tower-cost">💰 90</span></div>
+        <div><span class="tower-icon">☠️</span><span class="tower-name">Poison Tower</span>
+        <span class="tower-cost">💰 90</span></div>
         <div class="tower-desc">Damage over time effect [6]</div>
       </button>
 
@@ -138,9 +201,9 @@
       <div id="instructions">
         <strong>How to Play:</strong><br>
         1. Select a tower (or press 1-6)<br>
-        2. Click on the map to place it<br>
+        2. Click/tap on the map to place it<br>
         3. Start the wave (Space bar)<br>
-        4. Click placed towers to upgrade/sell<br>
+        4. Click/tap placed towers to upgrade/sell<br>
         5. Survive all 15 waves to win!<br>
         <strong>Esc</strong> = deselect
       </div>
