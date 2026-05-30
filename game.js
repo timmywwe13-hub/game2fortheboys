@@ -144,10 +144,7 @@ const MAP_PATHS = {
     { x: 0, y: 300 }, { x: 100, y: 300 }, { x: 100, y: 100 },
     { x: 500, y: 100 }, { x: 500, y: 500 }, { x: 200, y: 500 },
     { x: 200, y: 200 }, { x: 400, y: 200 }, { x: 400, y: 400 },
-    { x: 300, y: 400 }, { x: 300, y: 300 }, { x: 700, y: 300 }
-  ]
-};
-let PATH = MAP_PATHS.classic;
+    { x: 300, y: 400 }, { x: 300, y: 300 }, { x: 700, y: 300 } ], backrooms: [ { x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 50 }, { x: 500, y: 50 }, { x: 500, y: 200 }, { x: 350, y: 200 }, { x: 350, y: 300 }, { x: 550, y: 300 }, { x: 550, y: 450 }, { x: 350, y: 450 }, { x: 350, y: 550 }, { x: 150, y: 550 }, { x: 150, y: 400 }, { x: 50, y: 400 }, { x: 50, y: 300 }, { x: 200, y: 300 }, { x: 200, y: 200 }, { x: 50, y: 200 }, { x: 50, y: 500 }, { x: 250, y: 500 }, { x: 250, y: 400 }, { x: 450, y: 400 }, { x: 450, y: 550 }, { x: 600, y: 550 }, { x: 600, y: 350 }, { x: 650, y: 350 }, { x: 650, y: 150 }, { x: 700, y: 150 } ] }; let PATH = MAP_PATHS.classic;
 
 // ── Difficulty Settings ──
 const DIFFICULTY_SETTINGS = {
@@ -197,6 +194,8 @@ window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200)
 // NATURE BACKGROUND GENERATOR
 // ═══════════════════════════════════════════════════════
 function generateNature() {
+  if (currentMap === 'backrooms') { generateBackroomsElements(); return; }
+
   natureElements = [];
   ambientParticles = [];
 
@@ -1349,7 +1348,7 @@ function draw() {
     const sy = (Math.random() - 0.5) * shakeAmount * 2;
     ctx.translate(sx, sy);
   }
-  drawNatureBackground();
+  if (currentMap === 'backrooms') { drawBackroomsBackground(); } else { drawNatureBackground(); }
   drawPath();
   drawPowerUps();
   drawTowers();
@@ -1430,10 +1429,10 @@ function drawShop() {
   ctx.lineWidth = 3;
   ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
   // Close button (X) - top right corner of shop panel
-  const closeBtnX = canvas.width - 85;
-  const closeBtnY = 55;
-  const closeBtnW = 30;
-  const closeBtnH = 30;
+  const closeBtnX = canvas.width - 100;
+  const closeBtnY = 45;
+  const closeBtnW = 50;
+  const closeBtnH = 50;
   ctx.fillStyle = 'rgba(200, 0, 0, 0.8)';
   ctx.fillRect(closeBtnX, closeBtnY, closeBtnW, closeBtnH);
   ctx.strokeStyle = '#ff4444';
@@ -1505,6 +1504,40 @@ function buyShopItem(index) {
 }
 
 function drawPath() {
+  if (currentMap === 'backrooms') {
+    // Carpet hallway border
+    ctx.strokeStyle = '#3d2b1f';
+    ctx.lineWidth = 48;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(PATH[0].x, PATH[0].y);
+    for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
+    ctx.stroke();
+    // Carpet hallway fill
+    ctx.strokeStyle = '#8b4513';
+    ctx.lineWidth = 42;
+    ctx.beginPath();
+    ctx.moveTo(PATH[0].x, PATH[0].y);
+    for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
+    ctx.stroke();
+    // Carpet pattern (dashed center line)
+    ctx.setLineDash([6, 10]);
+    ctx.strokeStyle = 'rgba(61,43,31,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(PATH[0].x, PATH[0].y);
+    for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Entry / Exit markers
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🚪', PATH[0].x + 15, PATH[0].y);
+    ctx.fillText('🏠', PATH[PATH.length - 1].x - 15, PATH[PATH.length - 1].y);
+    return;
+  }
   // Dirt path border
   ctx.strokeStyle = '#8B7355';
   ctx.lineWidth = 48;
@@ -1514,7 +1547,6 @@ function drawPath() {
   ctx.moveTo(PATH[0].x, PATH[0].y);
   for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
   ctx.stroke();
-
   // Dirt path fill
   ctx.strokeStyle = '#C4A46C';
   ctx.lineWidth = 42;
@@ -1522,7 +1554,6 @@ function drawPath() {
   ctx.moveTo(PATH[0].x, PATH[0].y);
   for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
   ctx.stroke();
-
   // Path detail (dashed center line)
   ctx.setLineDash([8, 12]);
   ctx.strokeStyle = 'rgba(139,115,85,0.4)';
@@ -1532,7 +1563,6 @@ function drawPath() {
   for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
   ctx.stroke();
   ctx.setLineDash([]);
-
   // Entry / Exit markers
   ctx.font = '20px Arial';
   ctx.textAlign = 'center';
@@ -1826,10 +1856,10 @@ function handleCanvasInteraction(x, y) {
   if (!gameRunning) return;
   if (shopOpen) {
     // Close button hit test
-    const closeBtnX = canvas.width - 85;
-    const closeBtnY = 55;
-    const closeBtnW = 30;
-    const closeBtnH = 30;
+    const closeBtnX = canvas.width - 100;
+    const closeBtnY = 45;
+    const closeBtnW = 50;
+    const closeBtnH = 50;
     if (x >= closeBtnX && x <= closeBtnX + closeBtnW && y >= closeBtnY && y <= closeBtnY + closeBtnH) {
       closeShop();
       return;
