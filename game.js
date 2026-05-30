@@ -51,12 +51,6 @@ let gameSpeed = 1;
 let mouseX = 0, mouseY = 0;
 let enemiesSpawned = 0;
 let totalWaveEnemies = 0;
-// ── v3.0: Day/Night, Endless, Shop, Laser ──
-let isNight = false;
-let nightTransition = 0; // 0 = day, 1 = full night
-let endlessMode = false;
-let laserBeams = [];
-let shopOpen = false;
 let shopUpgrades = { dmgBonus: 0, fireRateBonus: 0, startGoldBonus: 0, extraLives: 0 };
 const SHOP_ITEMS = [ { id: 'dmgBonus', key: 'dmgBonus', name: 'Damage Boost', desc: '+10% tower damage', baseCost: 50, costInc: 20, icon: '⚔️', maxLevel: 5 }, { id: 'fireRateBonus', key: 'fireRateBonus', name: 'Fire Rate Boost', desc: '+10% faster fire rate', baseCost: 60, costInc: 25, icon: '⚡', maxLevel: 5 }, { id: 'startGoldBonus', key: 'startGoldBonus', name: 'Starting Gold', desc: '+25 starting gold', baseCost: 40, costInc: 15, icon: '💰', maxLevel: 5 }, { id: 'extraLives', key: 'extraLives', name: 'Extra Lives', desc: '+2 extra lives', baseCost: 80, costInc: 30, icon: '❤️', maxLevel: 5 } ];
 
