@@ -54,9 +54,21 @@
       <button class="changelog-close" onclick="toggleChangelog()">✕</button>
       <div class="changelog-entries">
         <div class="changelog-entry">
-          <span class="cl-version">v2.0</span>
-          <span class="cl-date">— Latest</span>
-          <ul>
+          <span class="cl-version">v3.0</span>
+            <span class="cl-date">— Latest</span>
+            <ul>
+              <li>🔴 Laser Tower — piercing beam hits all enemies in a line</li>
+              <li>✨ Buff Tower — boosts nearby towers damage & fire rate</li>
+              <li>✈️ Flying Enemies — drones that only anti-air towers can hit</li>
+              <li>🌙 Day/Night Cycle — night waves have faster enemies & reduced tower range</li>
+              <li>♾️ Endless Mode — infinitely scaling waves after wave 15</li>
+              <li>🛒 Shop Upgrades — spend gold on permanent upgrades between waves</li>
+            </ul>
+          </div>
+          <div class="changelog-entry">
+            <span class="cl-version">v2.0</span>
+            <span class="cl-date">— Previous</span>
+            <ul><ul>
             <li>🌿 Nature backgrounds — grass, trees, flowers, water, butterflies &amp; birds on every map</li>
             <li>📱 Full mobile &amp; touch support — play on any screen size</li>
             <li>📜 In-game Update Log added</li>
@@ -172,7 +184,14 @@
         <span class="tower-cost">💰 90</span></div>
         <div class="tower-desc">Damage over time effect [6]</div>
       </button>
-
+      <button class="tower-btn tower-laser" data-tower="laser" onclick="selectTower('laser')">
+        <div><span class="tower-icon">🔴</span><span class="tower-name">Laser Tower</span> <span class="tower-cost">💰 200</span></div>
+        <div class="tower-desc">Piercing beam, hits all in line [7]</div>
+      </button>
+      <button class="tower-btn tower-buff" data-tower="buff" onclick="selectTower('buff')">
+        <div><span class="tower-icon">✨</span><span class="tower-name">Buff Tower</span> <span class="tower-cost">💰 120</span></div>
+        <div class="tower-desc">Boosts nearby towers' damage & speed [8]</div>
+      </button>
       <!-- Tower Info / Upgrade / Sell -->
       <div id="towerInfo">
         <div class="info-title" id="infoTitle">Tower</div>
@@ -207,13 +226,7 @@
 
       <div id="instructions">
         <strong>How to Play:</strong><br>
-        1. Select a tower (or press 1-6)<br>
-        2. Click/tap on the map to place it<br>
-        3. Start the wave (Space bar)<br>
-        4. Click/tap placed towers to upgrade/sell<br>
-        5. Survive all 15 waves to win!<br>
-        <strong>Esc</strong> = deselect
-      </div>
+        1. Select a tower (or press 1-8)<br> 2. Click/tap on the map to place it<br> 3. Start the wave (Space bar)<br> 4. Click/tap placed towers to upgrade/sell<br> 5. Survive waves & endless mode!<br> <strong>S</strong> = Shop &nbsp; <strong>Esc</strong> = deselect </div>
     </div>
   </div>
 
