@@ -27,6 +27,7 @@
         <button class="map-btn active" data-map="classic" onclick="setMap('classic')">🗺️ Classic</button>
         <button class="map-btn" data-map="zigzag" onclick="setMap('zigzag')">⚡ Zigzag</button>
         <button class="map-btn" data-map="spiral" onclick="setMap('spiral')">🌀 Spiral</button>
+        <button class="map-btn" data-map="backrooms" onclick="setMap('backrooms')">🏢 Backrooms</button>
       </div>
 
       <div class="lobby-features">
@@ -54,8 +55,18 @@
       <button class="changelog-close" onclick="toggleChangelog()">✕</button>
       <div class="changelog-entries">
         <div class="changelog-entry">
+          <span class="cl-version">v3.1</span>
+          <span class="cl-date">— Latest</span>
+          <ul>
+            <li>🏢 Backrooms Map — endless yellow hallways with fluorescent lights, damp carpet &amp; unsettling atmosphere</li>
+            <li>📱 Mobile Shop Fix — tap-friendly close button (red X) on the shop overlay</li>
+            <li>🛒 Shop Sidebar Button — open/close the shop from the sidebar on mobile</li>
+            <li>⌨️ ESC Key closes shop — keyboard shortcut to dismiss the shop</li>
+          </ul>
+        </div>
+        <div class="changelog-entry">
           <span class="cl-version">v3.0</span>
-            <span class="cl-date">— Latest</span>
+          <span class="cl-date">— Previous</span>
             <ul>
               <li>🔴 Laser Tower — piercing beam hits all enemies in a line</li>
               <li>✨ Buff Tower — boosts nearby towers damage & fire rate</li>
@@ -215,6 +226,7 @@
         <span class="combo-mult" id="comboMult">x1</span>
       </div>
 
+      <button id="shopBtn" onclick="if(shopOpen)closeShop();else if(!waveInProgress)openShop();">🛒 Shop</button>
       <button id="startWaveBtn" onclick="startWave()">⚔️ Start Wave</button>
 
       <!-- Speed Controls -->

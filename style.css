@@ -230,6 +230,25 @@ canvas {
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
+/* ── Shop Button ── */
+#shopBtn {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(180deg, #ff9800 0%, #f57c00 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+#shopBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 25px rgba(255, 152, 0, 0.6);
+}
+
 /* ── Start Wave Button ── */
 #startWaveBtn {
   width: 100%;
@@ -696,6 +715,7 @@ canvas {
   .tower-btn .tower-name { font-size: 13px; }
   .tower-btn .tower-desc { font-size: 10px; }
   #startWaveBtn { padding: 12px; font-size: 14px; }
+#shopBtn { padding: 10px; font-size: 14px; }
   #instructions { display: none; }
   #gameOverlay h1 { font-size: 32px; }
   #gameOverlay p { font-size: 18px; }
@@ -728,6 +748,7 @@ canvas {
   .tower-btn .tower-cost { font-size: 11px; }
   .tower-btn .tower-desc { font-size: 9px; }
   #startWaveBtn { padding: 10px; font-size: 13px; }
+#shopBtn { padding: 8px; font-size: 13px; }
   .speed-btn { padding: 6px; font-size: 11px; }
   #gameOverlay h1 { font-size: 24px; }
   #gameOverlay p { font-size: 14px; }

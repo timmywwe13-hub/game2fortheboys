@@ -260,6 +260,197 @@ function generateNature() {
   }
 }
 
+function generateBackroomsElements() {
+  natureElements = [];
+  ambientParticles = [];
+  // Wall segments along the edges and interior
+  const wallPositions = [
+    // Top walls
+    { x: 0, y: 0, w: 200, h: 20, shade: 0.9 },
+    { x: 250, y: 0, w: 180, h: 20, shade: 0.85 },
+    { x: 480, y: 0, w: 220, h: 20, shade: 0.92 },
+    // Bottom walls
+    { x: 0, y: 580, w: 160, h: 20, shade: 0.88 },
+    { x: 220, y: 580, w: 200, h: 20, shade: 0.9 },
+    { x: 470, y: 580, w: 230, h: 20, shade: 0.86 },
+    // Left walls
+    { x: 0, y: 0, w: 20, h: 180, shade: 0.87 },
+    { x: 0, y: 230, w: 20, h: 160, shade: 0.91 },
+    { x: 0, y: 430, w: 20, h: 170, shade: 0.85 },
+    // Right walls
+    { x: 680, y: 0, w: 20, h: 200, shade: 0.89 },
+    { x: 680, y: 260, w: 20, h: 150, shade: 0.93 },
+    { x: 680, y: 450, w: 20, h: 150, shade: 0.88 },
+    // Interior wall segments
+    { x: 150, y: 100, w: 20, h: 120, shade: 0.82 },
+    { x: 350, y: 50, w: 20, h: 100, shade: 0.88 },
+    { x: 500, y: 200, w: 120, h: 20, shade: 0.84 },
+    { x: 100, y: 350, w: 20, h: 100, shade: 0.9 },
+    { x: 300, y: 400, w: 150, h: 20, shade: 0.86 },
+    { x: 550, y: 350, w: 20, h: 130, shade: 0.92 },
+    { x: 200, y: 500, w: 100, h: 20, shade: 0.87 },
+    { x: 450, y: 480, w: 20, h: 80, shade: 0.83 },
+  ];
+  for (const w of wallPositions) {
+    natureElements.push({ type: 'wall', ...w });
+  }
+  // Doors along walls
+  const doorPositions = [
+    { x: 210, y: 0, w: 30, h: 20, open: false },
+    { x: 440, y: 0, w: 30, h: 20, open: true },
+    { x: 170, y: 580, w: 30, h: 20, open: false },
+    { x: 430, y: 580, w: 30, h: 20, open: true },
+    { x: 0, y: 190, w: 20, h: 30, open: false },
+    { x: 0, y: 410, w: 20, h: 30, open: true },
+    { x: 680, y: 210, w: 20, h: 30, open: false },
+    { x: 680, y: 420, w: 20, h: 30, open: true },
+    { x: 150, y: 230, w: 20, h: 30, open: Math.random() > 0.5 },
+    { x: 350, y: 160, w: 20, h: 30, open: Math.random() > 0.5 },
+    { x: 500, y: 220, w: 30, h: 20, open: Math.random() > 0.5 },
+    { x: 100, y: 460, w: 20, h: 30, open: Math.random() > 0.5 },
+  ];
+  for (const d of doorPositions) {
+    natureElements.push({ type: 'door', ...d });
+  }
+  // Water stains on carpet
+  for (let i = 0; i < 12; i++) {
+    natureElements.push({
+      type: 'stain',
+      x: 40 + Math.random() * 620,
+      y: 40 + Math.random() * 520,
+      r: 8 + Math.random() * 18
+    });
+  }
+  // Ambient dust particles
+  for (let i = 0; i < 40; i++) {
+    ambientParticles.push({
+      x: Math.random() * 700,
+      y: Math.random() * 600,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.2,
+      size: 1 + Math.random() * 2,
+      alpha: 0.2 + Math.random() * 0.4,
+      life: Math.random() * 200
+    });
+  }
+}
+function drawBackroomsBackground() {
+  natureTime += 0.02;
+  // Yellow/beige wallpaper base
+  ctx.fillStyle = '#c9b458';
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+  // Wallpaper texture - subtle vertical stripes
+  for (let x = 0; x < BASE_W; x += 60) {
+    ctx.fillStyle = 'rgba(180,160,60,0.15)';
+    ctx.fillRect(x, 0, 30, BASE_H);
+  }
+  // Horizontal wall/ceiling line
+  ctx.fillStyle = '#b8a548';
+  ctx.fillRect(0, 0, BASE_W, 8);
+  // Floor - damp carpet
+  ctx.fillStyle = '#6b5c3e';
+  ctx.fillRect(0, BASE_H - 60, BASE_W, 60);
+  // Carpet texture
+  for (let x = 0; x < BASE_W; x += 12) {
+    ctx.fillStyle = (x / 12) % 2 === 0 ? 'rgba(90,75,50,0.3)' : 'rgba(120,100,70,0.2)';
+    ctx.fillRect(x, BASE_H - 60, 12, 60);
+  }
+  // Ceiling
+  ctx.fillStyle = '#d4c468';
+  ctx.fillRect(0, 0, BASE_W, 25);
+  // Ceiling tiles
+  for (let x = 0; x < BASE_W; x += 50) {
+    ctx.strokeStyle = 'rgba(160,140,50,0.4)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, 0, 50, 25);
+  }
+  // Fluorescent light fixtures on ceiling
+  for (let i = 0; i < 8; i++) {
+    const lx = 40 + i * 85;
+    const ly = 12;
+    // Flicker effect
+    const flicker = Math.sin(natureTime * 8 + i * 2.5) > -0.3 ? 1 : 0.3;
+    // Light glow
+    const glow = ctx.createRadialGradient(lx + 20, ly, 0, lx + 20, ly, 60);
+    glow.addColorStop(0, 'rgba(255,255,220,' + flicker + ')');
+    glow.addColorStop(1, 'rgba(255,255,220,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(lx - 40, ly - 50, 120, 120);
+    // Light fixture body
+    ctx.fillStyle = '#888';
+    ctx.fillRect(lx, ly - 4, 40, 8);
+    // Light tube
+    ctx.fillStyle = 'rgba(255,255,230,' + flicker + ')';
+    ctx.fillRect(lx + 2, ly - 2, 36, 4);
+  }
+  // Wall segments (hallway walls)
+  const wallColor = '#c9b458';
+  const wallDark = '#b8a548';
+  const wallDarker = '#a89538';
+  // Draw wall segments to create hallway feel
+  natureElements.filter(n => n.type === 'wall').forEach(w => {
+    ctx.fillStyle = w.shade > 0.5 ? wallDark : wallColor;
+    ctx.fillRect(w.x, w.y, w.w, w.h);
+    // Wall border
+    ctx.strokeStyle = wallDarker;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(w.x, w.y, w.w, w.h);
+    // Wallpaper pattern on wall
+    for (let py = w.y; py < w.y + w.h; py += 20) {
+      ctx.strokeStyle = 'rgba(160,140,50,0.2)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(w.x, py);
+      ctx.lineTo(w.x + w.w, py);
+      ctx.stroke();
+    }
+  });
+  // Doors along walls
+  natureElements.filter(n => n.type === 'door').forEach(d => {
+    // Door frame
+    ctx.fillStyle = '#5a4a2a';
+    ctx.fillRect(d.x - 2, d.y - 2, d.w + 4, d.h + 4);
+    // Door
+    ctx.fillStyle = '#7a6a4a';
+    ctx.fillRect(d.x, d.y, d.w, d.h);
+    // Door handle
+    ctx.fillStyle = '#c0a030';
+    ctx.beginPath();
+    ctx.arc(d.x + d.w - 8, d.y + d.h / 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    // Door slightly open (dark gap)
+    if (d.open) {
+      ctx.fillStyle = '#1a1a0a';
+      ctx.fillRect(d.x, d.y, 4, d.h);
+    }
+  });
+  // Water stains on carpet
+  natureElements.filter(n => n.type === 'stain').forEach(s => {
+    ctx.beginPath();
+    ctx.ellipse(s.x, s.y, s.r, s.r * 0.6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(80,70,40,0.3)';
+    ctx.fill();
+  });
+  // Ambient buzzing particles (dust in light)
+  ambientParticles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x > BASE_W) p.x = 0;
+    if (p.y > BASE_H) p.y = 0;
+    if (p.x < 0) p.x = BASE_W;
+    if (p.y < 0) p.y = BASE_H;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,200,' + p.alpha + ')';
+    ctx.fill();
+  });
+  // Subtle vignette for unsettling feel
+  const vignette = ctx.createRadialGradient(BASE_W/2, BASE_H/2, BASE_W*0.3, BASE_W/2, BASE_H/2, BASE_W*0.7);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.25)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+}
 function drawNatureBackground() {
   natureTime += 0.02;
 
@@ -1238,6 +1429,22 @@ function drawShop() {
   ctx.strokeStyle = '#ffd700';
   ctx.lineWidth = 3;
   ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+  // Close button (X) - top right corner of shop panel
+  const closeBtnX = canvas.width - 85;
+  const closeBtnY = 55;
+  const closeBtnW = 30;
+  const closeBtnH = 30;
+  ctx.fillStyle = 'rgba(200, 0, 0, 0.8)';
+  ctx.fillRect(closeBtnX, closeBtnY, closeBtnW, closeBtnH);
+  ctx.strokeStyle = '#ff4444';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(closeBtnX, closeBtnY, closeBtnW, closeBtnH);
+  ctx.font = 'bold 20px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff';
+  ctx.fillText('X', closeBtnX + closeBtnW / 2, closeBtnY + closeBtnH / 2);
+  ctx.textBaseline = 'alphabetic';
   ctx.font = 'bold 22px Arial';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffd700';
@@ -1277,10 +1484,9 @@ function drawShop() {
   ctx.font = '14px Arial';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#888';
-  ctx.fillText('Click an item to buy | Press S or ESC to close', canvas.width / 2, canvas.height - 65);
+  ctx.fillText('Tap an item to buy | Tap X or press S/ESC to close', canvas.width / 2, canvas.height - 65);
   ctx.restore();
 }
-
 function openShop() { shopOpen = true; }
 function closeShop() { shopOpen = false; }
 
@@ -1619,6 +1825,15 @@ function getCanvasCoords(clientX, clientY) {
 function handleCanvasInteraction(x, y) {
   if (!gameRunning) return;
   if (shopOpen) {
+    // Close button hit test
+    const closeBtnX = canvas.width - 85;
+    const closeBtnY = 55;
+    const closeBtnW = 30;
+    const closeBtnH = 30;
+    if (x >= closeBtnX && x <= closeBtnX + closeBtnW && y >= closeBtnY && y <= closeBtnY + closeBtnH) {
+      closeShop();
+      return;
+    }
     const items = SHOP_ITEMS;
     const startY = 130;
     const itemH = 55;
