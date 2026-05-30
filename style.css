@@ -79,6 +79,9 @@ canvas {
 .stat-value.wave { color: #00ff88; }
 .stat-value.score { color: #e040fb; }
 .stat-value.kills { color: #ff9800; }
+.stat-value.daynight { font-size: 18px; }
+#dayNightBox { transition: background 0.5s ease; }
+#dayNightBox.night { background: rgba(30, 30, 80, 0.6); border: 1px solid rgba(100, 100, 255, 0.3); }
 
 /* ── Wave Progress Bar ── */
 #waveProgressBar {
@@ -141,6 +144,14 @@ canvas {
 .tower-btn .tower-cost { color: #ffd700; font-size: 12px; }
 .tower-btn .tower-desc { font-size: 11px; color: #aaa; margin-top: 4px; }
 .tower-icon { font-size: 24px; margin-right: 8px; }
+
+/* ── Laser & Buff Tower Buttons ── */
+.tower-laser { border-color: rgba(255, 60, 60, 0.4); }
+.tower-laser:hover:not(:disabled) { border-color: #ff3c3c; box-shadow: 0 0 15px rgba(255, 60, 60, 0.4); }
+.tower-laser.selected { border-color: #ff3c3c; box-shadow: 0 0 20px rgba(255, 60, 60, 0.6); }
+.tower-buff { border-color: rgba(255, 215, 0, 0.4); }
+.tower-buff:hover:not(:disabled) { border-color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+.tower-buff.selected { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
 
 /* ── Upgrade / Sell Buttons ── */
 #towerInfo {

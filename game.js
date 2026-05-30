@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// TOWER DEFENSE — game.js  v2.0
+// TOWER DEFENSE — game.js  v3.0
 // ═══════════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -34,7 +34,12 @@ let killCount = 0;
 let currentWave = 0;
 let maxWaves = 15;
 let waveInProgress = false;
-let selectedTowerType = null;
+  let isNight = false;
+   let nightTransition = 0;
+   let endlessMode = false;
+   let laserBeams = [];
+   let shopOpen = false;
+   let selectedTowerType = null;
 let selectedTower = null;
 let towers = [];
 let enemies = [];
@@ -46,6 +51,14 @@ let gameSpeed = 1;
 let mouseX = 0, mouseY = 0;
 let enemiesSpawned = 0;
 let totalWaveEnemies = 0;
+// ── v3.0: Day/Night, Endless, Shop, Laser ──
+let isNight = false;
+let nightTransition = 0; // 0 = day, 1 = full night
+let endlessMode = false;
+let laserBeams = [];
+let shopOpen = false;
+let shopUpgrades = { dmgBonus: 0, fireRateBonus: 0, startGoldBonus: 0, extraLives: 0 };
+const SHOP_ITEMS = [ { id: 'dmgBonus', key: 'dmgBonus', name: 'Damage Boost', desc: '+10% tower damage', baseCost: 50, costInc: 20, icon: '⚔️', maxLevel: 5 }, { id: 'fireRateBonus', key: 'fireRateBonus', name: 'Fire Rate Boost', desc: '+10% faster fire rate', baseCost: 60, costInc: 25, icon: '⚡', maxLevel: 5 }, { id: 'startGoldBonus', key: 'startGoldBonus', name: 'Starting Gold', desc: '+25 starting gold', baseCost: 40, costInc: 15, icon: '💰', maxLevel: 5 }, { id: 'extraLives', key: 'extraLives', name: 'Extra Lives', desc: '+2 extra lives', baseCost: 80, costInc: 30, icon: '❤️', maxLevel: 5 } ];
 
 // ── Screen Shake ──
 let shakeAmount = 0;
@@ -495,6 +508,11 @@ function init() {
   killCount = 0;
   currentWave = 0;
   waveInProgress = false;
+  isNight = false;
+  nightTransition = 0;
+  endlessMode = false;
+  laserBeams = [];
+  shopOpen = false;
   selectedTowerType = null;
   selectedTower = null;
   towers = [];
@@ -530,9 +548,11 @@ function init() {
 function updateUI() {
   goldDisplay.textContent = gold;
   livesDisplay.textContent = lives;
-  waveDisplay.textContent = currentWave + ' / ' + maxWaves;
+  waveDisplay.textContent = currentWave + (endlessMode ? ' ∞' : ' / ' + maxWaves);
   scoreDisplay.textContent = score;
   killsDisplay.textContent = killCount;
+  const dnEl = document.getElementById('dayNightIndicator');
+  if (dnEl) dnEl.textContent = isNight ? '🌙 Night' : '☀ Day';
   startWaveBtn.disabled = waveInProgress;
   startWaveBtn.textContent = waveInProgress ? '⚔️ Wave in Progress...' : (autoWave ? '⚔️ Auto: ON (click to toggle)' : '⚔️ Start Wave (click to toggle auto)');
   towerBtns.forEach(btn => {
@@ -542,7 +562,6 @@ function updateUI() {
       btn.classList.toggle('selected', selectedTowerType === type);
     }
   });
-  // Wave progress
   if (waveInProgress && totalWaveEnemies > 0) {
     const killed = totalWaveEnemies - enemies.length;
     const pct = Math.min(100, (killed / totalWaveEnemies) * 100);
@@ -663,24 +682,27 @@ function getComboMultiplier() {
 // WAVES
 // ═══════════════════════════════════════════════════════
 function startWave() {
-  if (waveInProgress || currentWave >= maxWaves) {
-    if (!waveInProgress && currentWave < maxWaves) {
-      autoWave = !autoWave;
-      updateUI();
-    }
+  if (shopOpen) closeShop();
+  if (waveInProgress) return;
+  if (!endlessMode && currentWave >= maxWaves) {
+    autoWave = !autoWave;
+    updateUI();
     return;
   }
-  autoWave = !autoWave || autoWave;
   currentWave++;
   waveInProgress = true;
-  waveAnnounceText = '⚔️ Wave ' + currentWave;
+  waveAnnounceText = endlessMode ? '∞ Endless Wave ' + currentWave : '⚔️ Wave ' + currentWave;
   waveAnnounceTimer = 90;
   updateUI();
   spawnWave();
 }
 
 function spawnWave() {
-  const enemyCount = 5 + currentWave * 2;
+  let enemyCount = 5 + currentWave * 2;
+  // Endless mode scaling
+  if (endlessMode) {
+    enemyCount = Math.floor(enemyCount * (1 + (currentWave - maxWaves) * 0.1));
+  }
   totalWaveEnemies = enemyCount;
   enemiesSpawned = 0;
   let spawnDelay = 0;
@@ -692,6 +714,7 @@ function spawnWave() {
       if (currentWave >= 3 && rand < 0.25) type = 'fast';
       if (currentWave >= 5 && rand < 0.15) type = 'tank';
       if (currentWave >= 4 && rand >= 0.25 && rand < 0.35) type = 'healer';
+      if (currentWave >= 6 && rand >= 0.35 && rand < 0.5) type = 'flying';
       if (currentWave >= 8 && i === enemyCount - 1) type = 'boss';
       spawnEnemy(type);
       enemiesSpawned++;
@@ -703,15 +726,24 @@ function spawnWave() {
 function spawnEnemy(type) {
   const template = ENEMY_TYPES[type];
   const diff = DIFFICULTY_SETTINGS[difficulty];
-  const hpMult = (1 + currentWave * 0.15) * diff.hpMult;
+  let hpMult = (1 + currentWave * 0.15) * diff.hpMult;
+  let speedMult = 1;
+  // Endless mode scaling
+  if (endlessMode) {
+    const endlessWave = currentWave - maxWaves;
+    hpMult *= Math.pow(1.15, endlessWave);
+    speedMult = Math.pow(1.05, endlessWave);
+  }
   enemies.push({
     x: PATH[0].x, y: PATH[0].y,
     hp: template.hp * hpMult, maxHp: template.hp * hpMult,
-    speed: template.speed, reward: template.reward,
+    speed: template.speed * speedMult,
+    reward: template.reward,
     color: template.color, size: template.size,
     pathIndex: 0, slowTimer: 0, slowAmount: 1,
     poisonTimer: 0, poisonDmg: 0,
-    type: type, frozen: false, frozenTimer: 0
+    type: type, frozen: false, frozenTimer: 0,
+    flying: template.flying || false
   });
 }
 
@@ -803,58 +835,106 @@ function triggerShake(amount, duration) {
 function updateEnemies() {
   for (let i = enemies.length - 1; i >= 0; i--) {
     const enemy = enemies[i];
-    if (enemy.frozenTimer > 0) {
-      enemy.frozenTimer--;
-      if (enemy.frozenTimer <= 0) enemy.frozen = false;
-      continue;
-    }
-    if (enemy.poisonTimer > 0) {
-      enemy.hp -= enemy.poisonDmg;
-      enemy.poisonTimer--;
-      if (enemy.poisonTimer % 10 === 0) createParticles(enemy.x, enemy.y, '#7cfc00', 2);
-    }
+    if (enemy.frozenTimer > 0) { enemy.frozenTimer--; if (enemy.frozenTimer <= 0) enemy.frozen = false; continue; }
+    if (enemy.poisonTimer > 0) { enemy.hp -= enemy.poisonDmg; enemy.poisonTimer--; if (enemy.poisonTimer % 10 === 0) createParticles(enemy.x, enemy.y, '#7cfc00', 2); }
     let speed = enemy.speed;
+    if (isNight) speed *= 1.3; // Night speed boost
     if (enemy.slowTimer > 0) { speed *= enemy.slowAmount; enemy.slowTimer--; }
-    if (enemy.type === 'healer') {
-      enemies.forEach(e => {
-        if (e !== enemy && e.hp > 0 && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) {
-          e.hp = Math.min(e.maxHp, e.hp + 0.3);
-        }
-      });
+    if (enemy.type === 'healer') { enemies.forEach(e => { if (e !== enemy && e.hp > 0 && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) { e.hp = Math.min(e.maxHp, e.hp + 0.3); } }); }
+    // Flying enemies move in a straight line from start to end
+    if (enemy.flying) {
+      const endPt = PATH[PATH.length - 1];
+      const dx = endPt.x - enemy.x, dy = endPt.y - enemy.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < speed + 5) { enemies.splice(i, 1); lives--; updateUI(); if (lives <= 0) endGame(false); continue; }
+      enemy.x += (dx / dist) * speed;
+      enemy.y += (dy / dist) * speed;
+      continue;
     }
     const target = PATH[enemy.pathIndex + 1];
-    if (!target) {
-      enemies.splice(i, 1);
-      lives--;
-      updateUI();
-      if (lives <= 0) endGame(false);
-      continue;
-    }
-    const dx = target.x - enemy.x;
-    const dy = target.y - enemy.y;
+    if (!target) { enemies.splice(i, 1); lives--; updateUI(); if (lives <= 0) endGame(false); continue; }
+    const dx = target.x - enemy.x; const dy = target.y - enemy.y;
     const dist = Math.hypot(dx, dy);
-    if (dist < speed) { enemy.pathIndex++; }
-    else { enemy.x += (dx / dist) * speed; enemy.y += (dy / dist) * speed; }
+    if (dist < speed) { enemy.pathIndex++; } else { enemy.x += (dx / dist) * speed; enemy.y += (dy / dist) * speed; }
   }
 }
 
 function updateTowers() {
+  laserBeams = [];
   const dmgBoost = activePowerUp && activePowerUp.type === 'damageBoost';
   towers.forEach(tower => {
+    const type = TOWER_TYPES[tower.type];
+    // Calculate effective range with night modifier
+    let effectiveRange = tower.range;
+    if (isNight) effectiveRange *= 0.7;
+    // Calculate effective fire rate with shop and buff bonuses
+    let effectiveFireRate = tower.fireRate;
+    effectiveFireRate *= (1 + shopUpgrades.fireRateBonus * 0.1);
+    // Check for nearby buff towers
+    let buffDmgMult = 1;
+    for (let b of towers) {
+      if (b.type === 'buff' && b !== tower) {
+        const bType = TOWER_TYPES[b.type];
+        const bRadius = bType.buffRadius + (b.level - 1) * (bType.upgradeRange || 0);
+        const dist = Math.hypot(b.x - tower.x, b.y - tower.y);
+        if (dist < bRadius) {
+          effectiveFireRate *= (bType.buffFireRateMult || 1);
+          buffDmgMult *= (bType.buffDmgMult || 1);
+        }
+      }
+    }
+    // Buff towers don't attack
+    if (type.isBuff) return;
+    // Laser tower: continuous beam
+    if (type.isLaser) {
+      tower.cooldown = Math.max(0, tower.cooldown - 1);
+      if (tower.cooldown <= 0) {
+        let target = null; let minDist = effectiveRange;
+        enemies.forEach(enemy => {
+          if (enemy.flying && !type.antiAir) return;
+          const dist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
+          if (dist < minDist) { minDist = dist; target = enemy; }
+        });
+        if (target) {
+          tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
+          const dx = target.x - tower.x, dy = target.y - tower.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          const dirX = dx / len, dirY = dy / len;
+          let beamEndX = tower.x + dirX * effectiveRange;
+          let beamEndY = tower.y + dirY * effectiveRange;
+          let dmg = tower.damage * (1 + shopUpgrades.dmgBonus * 0.1) * buffDmgMult;
+          if (dmgBoost) dmg *= 2;
+          enemies.forEach(enemy => {
+            if (enemy.flying && !type.antiAir) return;
+            const ex = enemy.x - tower.x, ey = enemy.y - tower.y;
+            const proj = ex * dirX + ey * dirY;
+            if (proj < 0 || proj > effectiveRange) return;
+            const perpDist = Math.abs(ex * dirY - ey * dirX);
+            if (perpDist < (enemy.size || 15) + 5) {
+              enemy.hp -= dmg;
+              createParticles(enemy.x, enemy.y, type.color, 2);
+            }
+          });
+          laserBeams.push({ x1: tower.x, y1: tower.y, x2: beamEndX, y2: beamEndY, color: type.color });
+          tower.cooldown = effectiveFireRate;
+          if (type.sfx) type.sfx();
+        }
+      }
+      return;
+    }
+    // Normal tower logic
     tower.cooldown = Math.max(0, tower.cooldown - 1);
     if (tower.cooldown === 0) {
-      let target = null;
-      let minDist = tower.range;
+      let target = null; let minDist = effectiveRange;
       enemies.forEach(enemy => {
+        if (enemy.flying && !type.antiAir) return;
         const dist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
         if (dist < minDist) { minDist = dist; target = enemy; }
       });
       if (target) {
         tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
         fireProjectile(tower, target, dmgBoost);
-        tower.cooldown = tower.fireRate;
-        // Sound effect
-        const type = TOWER_TYPES[tower.type];
+        tower.cooldown = effectiveFireRate;
         if (type.sfx) type.sfx();
       }
     }
@@ -1025,16 +1105,35 @@ function updateCombo() {
 function checkWaveComplete() {
   if (waveInProgress && enemiesSpawned >= totalWaveEnemies && enemies.length === 0) {
     waveInProgress = false;
+    laserBeams = [];
+    // Day/Night toggle every 3 waves
+    if (currentWave % 3 === 0) {
+      isNight = !isNight;
+      nightTransition = isNight ? 0 : 1;
+    }
     const bonus = currentWave * 15;
     gold += bonus;
     score += bonus;
-    addFloatingText(350, 300, 'Wave ' + currentWave + ' Clear! +' + bonus + '💰', '#00ff88');
+    addFloatingText(350, 300, 'Wave ' + currentWave + ' Clear! +' + bonus + ' gold', '#00ff88');
     sfxWaveClear();
     updateUI();
+    // Open shop between waves
+    if (!autoWave) shopOpen = true;
+    // Endless mode: continue after maxWaves
+    if (currentWave >= maxWaves && !endlessMode) {
+      endlessMode = true;
+      addFloatingText(350, 260, 'ENDLESS MODE ACTIVATED!', '#ff4444');
+    }
     if (autoWave && currentWave < maxWaves) {
       setTimeout(() => { if (gameRunning && autoWave) startWave(); }, 1500);
+    } else if (endlessMode && autoWave) {
+      setTimeout(() => { if (gameRunning && autoWave) startWave(); }, 2000);
     }
-    if (currentWave >= maxWaves) endGame(true);
+    if (currentWave >= maxWaves && !endlessMode) {
+      // Will enter endless mode next call
+    } else if (currentWave >= maxWaves && endlessMode && !autoWave) {
+      // Wait for player to start next wave or use shop
+    }
   }
 }
 
@@ -1043,7 +1142,7 @@ function checkWaveComplete() {
 // ═══════════════════════════════════════════════════════
 function fireProjectile(tower, target, dmgBoost) {
   const angle = Math.atan2(target.y - tower.y, target.x - tower.x);
-  let dmg = tower.damage;
+  let dmg = tower.damage * (1 + shopUpgrades.dmgBonus * 0.1);
   if (dmgBoost) dmg = Math.floor(dmg * 1.5);
   projectiles.push({
     x: tower.x, y: tower.y, angle,
@@ -1060,28 +1159,149 @@ function fireProjectile(tower, target, dmgBoost) {
 // ═══════════════════════════════════════════════════════
 function draw() {
   ctx.save();
-  // Screen shake
   if (shakeAmount > 0) {
     const sx = (Math.random() - 0.5) * shakeAmount * 2;
     const sy = (Math.random() - 0.5) * shakeAmount * 2;
     ctx.translate(sx, sy);
   }
-
-  // Nature background instead of dark grid
   drawNatureBackground();
-
   drawPath();
   drawPowerUps();
   drawTowers();
   drawEnemies();
   drawProjectiles();
+  drawLaserBeams();
   drawParticles();
   drawFloatingTexts();
   drawPlacementPreview();
   drawWaveAnnouncement();
   drawMiniMap();
-
+  drawDayNightOverlay();
+  if (shopOpen) drawShop();
   ctx.restore();
+}
+function drawLaserBeams() {
+  laserBeams.forEach(beam => {
+    ctx.save();
+    ctx.strokeStyle = beam.color || '#ff0000';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = beam.color || '#ff0000';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(beam.x1, beam.y1);
+    ctx.lineTo(beam.x2, beam.y2);
+    ctx.stroke();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(beam.x1, beam.y1);
+    ctx.lineTo(beam.x2, beam.y2);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function drawDayNightOverlay() {
+  if (isNight) {
+    if (nightTransition < 1) nightTransition = Math.min(1, nightTransition + 0.02);
+  } else {
+    if (nightTransition > 0) nightTransition = Math.max(0, nightTransition - 0.02);
+  }
+  if (nightTransition > 0) {
+    ctx.fillStyle = 'rgba(10, 10, 50, ' + (nightTransition * 0.35) + ')';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Stars
+    if (nightTransition > 0.5) {
+      const starAlpha = (nightTransition - 0.5) * 2;
+      ctx.fillStyle = 'rgba(255, 255, 255, ' + (starAlpha * 0.6) + ')';
+      for (let i = 0; i < 30; i++) {
+        const sx = (i * 137.5 + 50) % canvas.width;
+        const sy = (i * 97.3 + 20) % (canvas.height * 0.4);
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+  // Day/Night indicator
+  ctx.save();
+  ctx.font = '14px Arial';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = isNight ? '#8888ff' : '#ffcc00';
+  ctx.fillText(isNight ? '🌙 Night' : '☀ Day', canvas.width - 10, 20);
+  if (endlessMode) {
+    ctx.fillStyle = '#ff4444';
+    ctx.fillText('∞ Endless Wave ' + currentWave, canvas.width - 10, 40);
+  }
+  ctx.restore();
+}
+
+function drawShop() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect(50, 50, canvas.width - 100, canvas.height - 100);
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+  ctx.font = 'bold 22px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffd700';
+  ctx.fillText('SHOP', canvas.width / 2, 85);
+  ctx.font = '14px Arial';
+  ctx.fillStyle = '#aaa';
+  ctx.fillText('Gold: ' + gold, canvas.width / 2, 108);
+  const items = SHOP_ITEMS;
+  const startY = 130;
+  const itemH = 55;
+  items.forEach((item, i) => {
+    const y = startY + i * itemH;
+    const level = shopUpgrades[item.key];
+    const maxed = level >= item.maxLevel;
+    const cost = item.baseCost + level * item.costInc;
+    const canBuy = gold >= cost && !maxed;
+    ctx.fillStyle = canBuy ? 'rgba(0, 100, 0, 0.5)' : 'rgba(80, 0, 0, 0.5)';
+    ctx.fillRect(80, y, canvas.width - 160, itemH - 5);
+    ctx.strokeStyle = canBuy ? '#00ff88' : '#ff4444';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(80, y, canvas.width - 160, itemH - 5);
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(item.name, 100, y + 22);
+    ctx.font = '12px Arial';
+    ctx.fillStyle = '#aaa';
+    ctx.fillText(item.desc, 100, y + 40);
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = maxed ? '#888' : '#ffd700';
+    ctx.fillText(maxed ? 'MAX' : cost + ' gold', canvas.width - 100, y + 22);
+    ctx.font = '11px Arial';
+    ctx.fillStyle = '#888';
+    ctx.fillText('Lv ' + level + '/' + item.maxLevel, canvas.width - 100, y + 40);
+  });
+  ctx.font = '14px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#888';
+  ctx.fillText('Click an item to buy | Press S or ESC to close', canvas.width / 2, canvas.height - 65);
+  ctx.restore();
+}
+
+function openShop() { shopOpen = true; }
+function closeShop() { shopOpen = false; }
+
+function buyShopItem(index) {
+  const item = SHOP_ITEMS[index];
+  if (!item) return;
+  const level = shopUpgrades[item.key];
+  if (level >= item.maxLevel) return;
+  const cost = item.baseCost + level * item.costInc;
+  if (gold < cost) return;
+  gold -= cost;
+  shopUpgrades[item.key]++;
+  addFloatingText(350, 300, item.name + ' upgraded!', '#ffd700');
+  sfxPlace();
+  updateUI();
 }
 
 function drawPath() {
@@ -1150,6 +1370,7 @@ function drawPowerUps() {
 function drawTowers() {
   towers.forEach(tower => {
     const isSelected = selectedTower === tower;
+    const type = TOWER_TYPES[tower.type];
     if (isSelected) {
       ctx.beginPath();
       ctx.arc(tower.x, tower.y, tower.range, 0, Math.PI * 2);
@@ -1158,6 +1379,19 @@ function drawTowers() {
       ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
       ctx.lineWidth = 2;
       ctx.stroke();
+    }
+    // Buff tower radius on hover
+    if (type.isBuff && isSelected) {
+      const bRadius = type.buffRadius + (tower.level - 1) * (type.upgradeRange || 0);
+      ctx.beginPath();
+      ctx.arc(tower.x, tower.y, bRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.08)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
     ctx.beginPath();
     ctx.arc(tower.x, tower.y, 22, 0, Math.PI * 2);
@@ -1184,16 +1418,36 @@ function drawTowers() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(TOWER_TYPES[tower.type].icon, tower.x, tower.y);
+    ctx.fillText(type.icon, tower.x, tower.y);
   });
 }
 
 function drawEnemies() {
   enemies.forEach(enemy => {
-    ctx.beginPath();
-    ctx.ellipse(enemy.x, enemy.y + enemy.size, enemy.size * 0.8, enemy.size * 0.3, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-    ctx.fill();
+    // Flying enemies: draw shadow on ground and wings
+    if (enemy.flying) {
+      ctx.beginPath();
+      ctx.ellipse(enemy.x, enemy.y + enemy.size + 8, enemy.size * 0.6, enemy.size * 0.2, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fill();
+      // Wings
+      ctx.save();
+      ctx.translate(enemy.x, enemy.y);
+      const wingFlap = Math.sin(Date.now() * 0.01) * 0.3;
+      ctx.fillStyle = 'rgba(135, 206, 235, 0.6)';
+      ctx.beginPath();
+      ctx.ellipse(-enemy.size, -2, enemy.size * 0.8, enemy.size * 0.3 * (1 + wingFlap), -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(enemy.size, -2, enemy.size * 0.8, enemy.size * 0.3 * (1 - wingFlap), 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(enemy.x, enemy.y + enemy.size, enemy.size * 0.8, enemy.size * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fill();
+    }
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
     const gradient = ctx.createRadialGradient(enemy.x - enemy.size * 0.3, enemy.y - enemy.size * 0.3, 0, enemy.x, enemy.y, enemy.size);
@@ -1229,6 +1483,11 @@ function drawEnemies() {
       ctx.font = '14px Arial';
       ctx.textAlign = 'center';
       ctx.fillText('👑', enemy.x, enemy.y - enemy.size - 8);
+    }
+    if (enemy.flying) {
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('✈', enemy.x, enemy.y - enemy.size - 8);
     }
     const hpWidth = enemy.size * 2, hpHeight = 4;
     const hpX = enemy.x - hpWidth / 2, hpY = enemy.y - enemy.size - 10;
@@ -1330,11 +1589,13 @@ function endGame(victory) {
     highScore = score;
     localStorage.setItem('tdHighScore', highScore.toString());
   }
-  if (victory) sfxVictory(); else sfxGameOver();
+  if (victory) sfxVictory();
+  else sfxGameOver();
   gameOverlay.classList.remove('hidden');
   gameOverlay.classList.add(victory ? 'victory' : 'defeat');
   gameOverlay.querySelector('h1').textContent = victory ? '🎉 Victory!' : '💀 Defeat';
-  gameOverlay.querySelector('p').textContent = victory ? 'You survived all ' + maxWaves + ' waves!' : 'You reached wave ' + currentWave;
+  const waveText = endlessMode ? 'You reached endless wave ' + currentWave + '!' : (victory ? 'You survived all ' + maxWaves + ' waves!' : 'You reached wave ' + currentWave);
+  gameOverlay.querySelector('p').textContent = waveText;
   document.getElementById('finalScore').textContent = 'Score: ' + score + ' | Kills: ' + killCount + ' | 🏆 Best: ' + highScore;
 }
 
@@ -1363,7 +1624,19 @@ function getCanvasCoords(clientX, clientY) {
 // ═══════════════════════════════════════════════════════
 function handleCanvasInteraction(x, y) {
   if (!gameRunning) return;
-  // Check power-up collection
+  if (shopOpen) {
+    const items = SHOP_ITEMS;
+    const startY = 130;
+    const itemH = 55;
+    for (let i = 0; i < items.length; i++) {
+      const iy = startY + i * itemH;
+      if (x >= 80 && x <= canvas.width - 80 && y >= iy && y <= iy + itemH - 5) {
+        buyShopItem(i);
+        return;
+      }
+    }
+    return;
+  }
   if (powerUpOnMap && Math.hypot(x - powerUpOnMap.x, y - powerUpOnMap.y) < 25) {
     collectPowerUp(powerUpOnMap);
     return;
@@ -1437,7 +1710,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '3') selectTower('ice');
   if (e.key === '4') selectTower('lightning');
   if (e.key === '5') selectTower('sniper');
-  if (e.key === '6') selectTower('poison');
+  if (e.key === '6') selectTower('poison'); if (e.key === '7') selectTower('laser'); if (e.key === '8') selectTower('buff'); if (e.key === 's' || e.key === 'S') { if (shopOpen) closeShop(); else if (!waveInProgress) openShop(); }
   if (e.key === ' ') { e.preventDefault(); startWave(); }
   if (e.key === 'Escape') { selectedTowerType = null; hideTowerInfo(); updateUI(); }
 });

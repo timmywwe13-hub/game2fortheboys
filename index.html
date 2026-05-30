@@ -30,12 +30,15 @@
       </div>
 
       <div class="lobby-features">
-        <div class="lobby-feature">🏹 6 Tower Types</div>
+        <div class="lobby-feature">🏹 8 Tower Types</div>
         <div class="lobby-feature">⬆️ Upgrades &amp; Selling</div>
-        <div class="lobby-feature">🌊 15 Waves of Enemies</div>
+        <div class="lobby-feature">🌊 15 Waves + Endless Mode</div>
         <div class="lobby-feature">🎯 Boss Fights</div>
         <div class="lobby-feature">⚡ Power-ups</div>
         <div class="lobby-feature">🏆 High Scores</div>
+        <div class="lobby-feature">🌙 Day/Night Cycle</div>
+        <div class="lobby-feature">🛒 Shop Upgrades</div>
+        <div class="lobby-feature">✈️ Flying Enemies</div>
       </div>
 
       <button class="lobby-start-btn" onclick="startGame()">🎮 Start Game</button>
@@ -123,6 +126,10 @@
       <div class="stat-box">
         <div class="stat-label">💀 Kills</div>
         <div class="stat-value kills" id="killsDisplay">0</div>
+      </div>
+      <div class="stat-box" id="dayNightBox">
+        <div class="stat-label">Cycle</div>
+        <div class="stat-value daynight" id="dayNightIndicator">☀ Day</div>
       </div>
 
       <!-- Wave Progress Bar -->
