@@ -361,6 +361,96 @@ function generateBackroomsElements() {
     });
   }
 }
+
+function generateZigzagFloralElements() {
+  natureElements = [];
+  ambientParticles = [];
+
+  const waterY = BASE_H * 0.35;
+
+  // Helper to avoid path placement
+  function isNearPath(x, y, threshold = 30) {
+    for (let i = 0; i < PATH.length; i++) {
+      const dx = x - PATH[i].x;
+      const dy = y - PATH[i].y;
+      if (dx*dx + dy*dy < threshold*threshold) return true;
+    }
+    return false;
+  }
+
+  // Water lilies (flowers) on the pond
+  const flowerCount = 80;
+  const flowerColors = ['#ffffff', '#fff0f0', '#ffe4b5', '#ffd700', '#ff69b4', '#87ceeb', '#e6e6fa', '#ffb6c1'];
+  for (let i = 0; i < flowerCount; i++) {
+    let fx, fy;
+    let attempts = 0;
+    do {
+      fx = Math.random() * BASE_W;
+      fy = waterY + Math.random() * (BASE_H - waterY - 30);
+      attempts++;
+    } while (isNearPath(fx, fy, 30) && attempts < 100);
+    natureElements.push({
+      type: 'flower',
+      x: fx,
+      y: fy,
+      color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+      size: 5 + Math.random() * 5,
+      petals: 5 + Math.floor(Math.random() * 4)
+    });
+  }
+
+  // Butterflies
+  const butterflyCount = 12;
+  const butterflyColors = ['#ff69b4', '#ffd700', '#87ceeb', '#da70d6', '#ff6347', '#00ffff'];
+  for (let i = 0; i < butterflyCount; i++) {
+    natureElements.push({
+      type: 'butterfly',
+      x: Math.random() * BASE_W,
+      y: waterY + Math.random() * (BASE_H - waterY - 20),
+      color: butterflyColors[Math.floor(Math.random() * butterflyColors.length)],
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: (Math.random() - 0.5) * 0.8,
+      wingPhase: Math.random() * Math.PI * 2
+    });
+  }
+
+  // Grass on the banks (edges)
+  const grassCount = 30;
+  for (let i = 0; i < grassCount; i++) {
+    let gx, gy;
+    let attempts = 0;
+    do {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      gx = side === -1 ? 10 + Math.random() * 100 : BASE_W - 110 + Math.random() * 100;
+      gy = waterY + 10 + Math.random() * (BASE_H - waterY - 40);
+      attempts++;
+    } while (isNearPath(gx, gy, 30) && attempts < 100);
+    natureElements.push({
+      type: 'grass',
+      x: gx,
+      y: gy,
+      h: 8 + Math.random() * 12,
+      sway: Math.random() * Math.PI * 2
+    });
+  }
+
+  // Ambient floating particles (pollen)
+  const particleCount = 20;
+  for (let i = 0; i < particleCount; i++) {
+    ambientParticles.push({
+      x: Math.random() * BASE_W,
+      y: waterY + Math.random() * (BASE_H - waterY - 20),
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2 - 0.1,
+      size: 1 + Math.random() * 2,
+      rot: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.05,
+      color: Math.random() > 0.5 ? '#fff8dc' : '#ffd700',
+      alpha: 0.3 + Math.random() * 0.5
+    });
+  }
+}
+
 function drawBackroomsBackground() {
   natureTime += 0.02;
   // Yellow/beige wallpaper base
