@@ -222,7 +222,7 @@ window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200)
 // ═══════════════════════════════════════════════════════
 function generateNature() {
   if (currentMap === 'backrooms') { generateBackroomsElements(); return; }
-  // zigzag uses nature elements (swamp theme)
+  if (currentMap === 'zigzag') { generateZigzagFloralElements(); return; }
 
   natureElements = [];
   ambientParticles = [];
