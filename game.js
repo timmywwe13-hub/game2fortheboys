@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════
-// TOWER DEFENSE — game.js  v3.0
+
+// TOWER DEFENSE — game.js v3.2
 // ═══════════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -95,6 +96,8 @@ function sfxPlace()    { playSound(440, 0.08, 'triangle', 0.06); }
 function sfxSell()     { playSound(330, 0.1, 'triangle', 0.06); }
 function sfxGameOver() { playSound(200, 0.3, 'sawtooth', 0.1); setTimeout(()=>playSound(150, 0.4, 'sawtooth', 0.1), 300); }
 function sfxVictory()  { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playSound(f,0.2,'sine',0.1),i*150)); }
+function sfxLaser() { playSound(1800, 0.08, 'sawtooth', 0.06); }
+function sfxBuff() { playSound(600, 0.1, 'sine', 0.06); setTimeout(()=>playSound(800, 0.1, 'sine', 0.06), 80); }
 
 // ── Nature Background Data ──
 let natureElements = [];
@@ -144,7 +147,10 @@ const MAP_PATHS = {
     { x: 0, y: 300 }, { x: 100, y: 300 }, { x: 100, y: 100 },
     { x: 500, y: 100 }, { x: 500, y: 500 }, { x: 200, y: 500 },
     { x: 200, y: 200 }, { x: 400, y: 200 }, { x: 400, y: 400 },
-    { x: 300, y: 400 }, { x: 300, y: 300 }, { x: 700, y: 300 } ], backrooms: [ { x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 50 }, { x: 500, y: 50 }, { x: 500, y: 200 }, { x: 350, y: 200 }, { x: 350, y: 300 }, { x: 550, y: 300 }, { x: 550, y: 450 }, { x: 350, y: 450 }, { x: 350, y: 550 }, { x: 150, y: 550 }, { x: 150, y: 400 }, { x: 50, y: 400 }, { x: 50, y: 300 }, { x: 200, y: 300 }, { x: 200, y: 200 }, { x: 50, y: 200 }, { x: 50, y: 500 }, { x: 250, y: 500 }, { x: 250, y: 400 }, { x: 450, y: 400 }, { x: 450, y: 550 }, { x: 600, y: 550 }, { x: 600, y: 350 }, { x: 650, y: 350 }, { x: 650, y: 150 }, { x: 700, y: 150 } ] }; let PATH = MAP_PATHS.classic;
+    { x: 300, y: 400 }, { x: 300, y: 300 }, { x: 300, y: 50 },
+    { x: 700, y: 50 }
+  ],
+  backrooms: [ { x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 50 }, { x: 500, y: 50 }, { x: 500, y: 200 }, { x: 350, y: 200 }, { x: 350, y: 300 }, { x: 550, y: 300 }, { x: 550, y: 450 }, { x: 350, y: 450 }, { x: 350, y: 550 }, { x: 150, y: 550 }, { x: 150, y: 400 }, { x: 50, y: 400 }, { x: 50, y: 300 }, { x: 200, y: 300 }, { x: 200, y: 200 }, { x: 50, y: 200 }, { x: 50, y: 500 }, { x: 250, y: 500 }, { x: 250, y: 400 }, { x: 450, y: 400 }, { x: 450, y: 550 }, { x: 600, y: 550 }, { x: 600, y: 350 }, { x: 650, y: 350 }, { x: 650, y: 150 }, { x: 700, y: 150 } ] }; let PATH = MAP_PATHS.classic;
 
 // ── Difficulty Settings ──
 const DIFFICULTY_SETTINGS = {
@@ -160,7 +166,22 @@ const TOWER_TYPES = {
   ice:       { cost: 75,  damage: 20, range: 110, fireRate: 35, color: '#00bfff', name: 'Ice Tower',       projectileColor: '#00ffff', projectileSpeed: 6,  slow: 0.5, icon: '❄️', desc: 'Slows enemies, medium damage',      upgradeCost: 55,  upgradeDmg: 8,  upgradeRange: 12, sfx: sfxIce },
   lightning: { cost: 150, damage: 30, range: 150, fireRate: 50, color: '#9932cc', name: 'Lightning Tower', projectileColor: '#ffff00', projectileSpeed: 20, chain: 3,  icon: '⚡', desc: 'Chain lightning to 3 enemies',      upgradeCost: 100, upgradeDmg: 15, upgradeRange: 15, sfx: sfxLightning },
   sniper:    { cost: 125, damage: 80, range: 250, fireRate: 90, color: '#2e8b57', name: 'Sniper Tower',    projectileColor: '#ff00ff', projectileSpeed: 15, icon: '🎯', desc: 'Very long range, massive damage',   upgradeCost: 90,  upgradeDmg: 40, upgradeRange: 20, sfx: sfxSniper },
-  poison:    { cost: 90,  damage: 8,  range: 100, fireRate: 25, color: '#32cd32', name: 'Poison Tower',    projectileColor: '#7cfc00', projectileSpeed: 7,  poison: 3, icon: '☠️', desc: 'Poisons enemies — damage over time', upgradeCost: 60, upgradeDmg: 4,  upgradeRange: 10, sfx: sfxPoison }
+  poison:    { cost: 90,  damage: 8,  range: 100, fireRate: 25, color: '#32cd32', name: 'Poison Tower',    projectileColor: '#7cfc00', projectileSpeed: 7,  poison: 3, icon: '☠️', desc: 'Poisons enemies — damage over time', upgradeCost: 60, upgradeDmg: 4,  upgradeRange: 10, sfx: sfxPoison },
+    laser: {
+        cost: 200, damage: 2, range: 180, fireRate: 5, color: '#ff0000',
+        name: 'Laser Tower', projectileColor: '#ff0000', projectileSpeed: 0,
+        icon: '🔴', desc: 'Piercing beam, hits all in line',
+        upgradeCost: 150, upgradeDmg: 1, upgradeRange: 15,
+        isLaser: true, sfx: sfxLaser
+    },
+    buff: {
+        cost: 120, damage: 0, range: 0, fireRate: 0, color: '#ffd700',
+        name: 'Buff Tower', projectileColor: '#ffd700', projectileSpeed: 0,
+        icon: '✨', desc: 'Boosts nearby towers damage and speed',
+        upgradeCost: 80, upgradeDmg: 0, upgradeRange: 20,
+        isBuff: true, buffRadius: 120, buffDmgMult: 1.25, buffFireRateMult: 1.2,
+        sfx: sfxBuff
+    }
 };
 
 // ── Enemy Types ──
@@ -169,7 +190,8 @@ const ENEMY_TYPES = {
   fast:   { hp: 50,  speed: 3,   reward: 15,  color: '#ffff00', size: 12, name: 'Scout' },
   tank:   { hp: 300, speed: 0.8, reward: 30,  color: '#8b0000', size: 22, name: 'Brute' },
   healer: { hp: 120, speed: 1.2, reward: 25,  color: '#00ff88', size: 16, name: 'Medic' },
-  boss:   { hp: 1000,speed: 0.5, reward: 100, color: '#4a0080', size: 30, name: 'Overlord' }
+  boss:   { hp: 1000,speed: 0.5, reward: 100, color: '#4a0080', size: 30, name: 'Overlord' },
+  flying: { hp: 60, speed: 2.5, reward: 20, color: '#ffa500', size: 14, name: 'Drone', flying: true }
 };
 
 // ═══════════════════════════════════════════════════════
