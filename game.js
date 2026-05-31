@@ -849,8 +849,8 @@ function drawPath() {
     pathColor = '#8b6914';
     pathOutline = '#5a4510';
   } else if (currentMap === 'zigzag') {
-    pathColor = '#e6d5c3';  // Sandy beige for swamp path
-    pathOutline = '#8b7d6b';  // Brown outline
+    pathColor = '#a67c52';  // Warm medium brown (wood)
+    pathOutline = '#5d4037';  // Dark brown outline
   } else {
     pathColor = PATH_COLOR;
     pathOutline = null;
@@ -878,6 +878,17 @@ function drawPath() {
     ctx.lineTo(PATH[i].x, PATH[i].y);
   }
   ctx.stroke();
+  // Add subtle center highlight for zigzag to simulate worn wood
+  if (currentMap === 'zigzag') {
+    ctx.strokeStyle = '#f5e6d3'; // lighter beige
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(PATH[0].x, PATH[0].y);
+    for (let i = 1; i < PATH.length; i++) {
+      ctx.lineTo(PATH[i].x, PATH[i].y);
+    }
+    ctx.stroke();
+  }
 }
 
 // ═══════════════════════════════════════════════════════
