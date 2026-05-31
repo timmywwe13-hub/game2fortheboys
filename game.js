@@ -922,7 +922,7 @@ function spawnWave() {
       if (currentWave >= 5 && rand < 0.15) type = 'tank';
       if (currentWave >= 4 && rand >= 0.25 && rand < 0.35) type = 'healer';
       if (currentWave >= 6 && rand >= 0.35 && rand < 0.5) type = 'flying';
-      if (currentWave === maxWaves - 1 && i === enemyCount - 1) type = 'finalBoss';
+      if (currentWave === maxWaves && i === enemyCount - 1) type = 'finalBoss';
       else if (currentWave >= 8 && i === enemyCount - 1) type = 'boss';
       spawnEnemy(type);
       enemiesSpawned++;
