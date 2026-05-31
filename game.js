@@ -152,6 +152,10 @@ const MAP_PATHS = {
   ],
   backrooms: [ { x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 50 }, { x: 500, y: 50 }, { x: 500, y: 200 }, { x: 350, y: 200 }, { x: 350, y: 300 }, { x: 550, y: 300 }, { x: 550, y: 450 }, { x: 350, y: 450 }, { x: 350, y: 550 }, { x: 150, y: 550 }, { x: 150, y: 400 }, { x: 50, y: 400 }, { x: 50, y: 300 }, { x: 200, y: 300 }, { x: 200, y: 200 }, { x: 50, y: 200 }, { x: 50, y: 500 }, { x: 250, y: 500 }, { x: 250, y: 400 }, { x: 450, y: 400 }, { x: 450, y: 550 }, { x: 600, y: 550 }, { x: 600, y: 350 }, { x: 650, y: 350 }, { x: 650, y: 150 }, { x: 700, y: 150 } ] }; let PATH = MAP_PATHS.classic;
 
+// Path rendering
+const PATH_COLOR = '#ffcc00';
+const PATH_WIDTH = 52;
+
 // ── Difficulty Settings ──
 const DIFFICULTY_SETTINGS = {
   easy:   { goldMult: 1.5, hpMult: 0.7, livesBonus: 10, scoreMult: 0.8 },
@@ -218,6 +222,7 @@ window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200)
 // ═══════════════════════════════════════════════════════
 function generateNature() {
   if (currentMap === 'backrooms') { generateBackroomsElements(); return; }
+  // zigzag uses nature elements (swamp theme)
 
   natureElements = [];
   ambientParticles = [];
@@ -477,7 +482,7 @@ function drawNatureBackground() {
   natureTime += 0.02;
 
   // Base grass colour
-  const grassBase = currentMap === 'zigzag' ? '#2d5a27' : currentMap === 'spiral' ? '#1e4d2b' : '#2a6e2a';
+  const grassBase = currentMap === 'spiral' ? '#1e4d2b' : '#2a6e2a';
   ctx.fillStyle = grassBase;
   ctx.fillRect(0, 0, BASE_W, BASE_H);
 
@@ -633,6 +638,172 @@ function drawNatureBackground() {
 }
 
 // ═══════════════════════════════════════════════════════
+// ZIGZAG POND BACKGROUND
+// ═══════════════════════════════════════════════════════
+function drawZigzagPondBackground() {
+  const time = natureTime;
+
+  // Sky gradient (overcast)
+  const skyHeight = BASE_H * 0.35;
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, skyHeight);
+  skyGrad.addColorStop(0, '#a0a0a0');
+  skyGrad.addColorStop(1, '#c8c8c8');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, BASE_W, skyHeight);
+
+  // Water
+  const waterY = skyHeight;
+  const waterH = BASE_H - waterY;
+  const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
+  waterGrad.addColorStop(0, '#5a9c6a');
+  waterGrad.addColorStop(1, '#3a6c4a');
+  ctx.fillStyle = waterGrad;
+  ctx.fillRect(0, waterY, BASE_W, waterH);
+
+  // Water ripples
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 20; i++) {
+    const y = waterY + 20 + i * 25;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    for (let x = 0; x <= BASE_W; x += 8) {
+      const waveY = y + Math.sin(x * 0.015 + time * 0.5) * 2;
+      ctx.lineTo(x, waveY);
+    }
+    ctx.stroke();
+  }
+
+  // Distant shrubbery at horizon
+  ctx.fillStyle = '#2e5a3b';
+  for (let x = 0; x < BASE_W; x += 15) {
+    const h = 15 + ((x * 0.1) % 10);
+    ctx.fillRect(x, waterY - h, 15, h);
+  }
+
+  // Weeping willow trees (3)
+  const willowCount = 3;
+  for (let w = 0; w < willowCount; w++) {
+    const wx = (BASE_W * (0.2 + w * 0.3));
+    const trunkY = waterY - 10;
+    // Trunk
+    ctx.fillStyle = '#5c3a1e';
+    ctx.fillRect(wx - 6, trunkY - 80, 12, 80);
+    // Branches
+    ctx.strokeStyle = '#4a8c2a';
+    ctx.lineWidth = 3;
+    const branchCount = 10;
+    for (let i = 0; i < branchCount; i++) {
+      const offsetX = (i - branchCount/2) * 10;
+      const startX = wx + offsetX;
+      const startY = trunkY - 80;
+      const ctrlX = startX + 15;
+      const ctrlY = startY + 40;
+      const endX = startX + 40;
+      const endY = startY + 20 + Math.abs(i - branchCount/2) * 5;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+      ctx.stroke();
+      // Leaf cluster
+      ctx.fillStyle = '#3a6c2a';
+      ctx.beginPath();
+      ctx.ellipse(endX, endY, 10, 5, Math.atan2(endY - ctrlY, endX - ctrlX), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Lily pads
+  const lilyCount = 30;
+  for (let i = 0; i < lilyCount; i++) {
+    const lx = (i * 37 + 13) % BASE_W;
+    const ly = waterY + 30 + (i * 23 % (waterH - 80));
+    const size = 8 + (i % 5);
+    ctx.fillStyle = '#3a7c4a';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, size, size * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Slit
+    ctx.strokeStyle = '#2a5c3a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(lx, ly - size * 0.4);
+    ctx.lineTo(lx, ly + size * 0.4);
+    ctx.stroke();
+  }
+
+  // Fallen leaves on water
+  const leafCount = 15;
+  for (let i = 0; i < leafCount; i++) {
+    const lx = (i * 51 + 7) % BASE_W;
+    const ly = waterY + 50 + (i * 31 % (waterH - 100));
+    const size = 3 + (i % 4);
+    ctx.fillStyle = i % 2 === 0 ? '#c1441e' : '#d4a017';
+    ctx.beginPath();
+    ctx.arc(lx, ly, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Banks (edges) with bushes
+  ctx.fillStyle = '#2e5a3b';
+  // Left bank curve
+  ctx.beginPath();
+  ctx.moveTo(0, BASE_H);
+  ctx.lineTo(0, waterY - 20);
+  ctx.quadraticCurveTo(60, waterY - 50, 120, waterY - 10);
+  ctx.lineTo(120, BASE_H);
+  ctx.fill();
+  // Right bank curve
+  ctx.beginPath();
+  ctx.moveTo(BASE_W, BASE_H);
+  ctx.lineTo(BASE_W, waterY - 30);
+  ctx.quadraticCurveTo(BASE_W - 80, waterY - 60, BASE_W - 180, waterY - 15);
+  ctx.lineTo(BASE_W - 180, BASE_H);
+  ctx.fill();
+
+  // Foreground flowers (bottom left)
+  // Pink roses
+  for (let i = 0; i < 10; i++) {
+    const fx = 20 + (i * 11) % 80;
+    const fy = BASE_H - 10 - (i * 7) % 60;
+    const size = 4 + (i % 3);
+    ctx.fillStyle = '#ff7eb3';
+    ctx.beginPath();
+    ctx.arc(fx, fy, size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.arc(fx, fy, size * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Purple foxglove
+  for (let i = 0; i < 6; i++) {
+    const fx = 30 + (i * 17) % 70;
+    const fy = BASE_H - 20 - (i * 13) % 50;
+    const height = 30 + (i % 3) * 10;
+    // Stem
+    ctx.strokeStyle = '#228b22';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(fx, fy - height);
+    ctx.stroke();
+    // Flowers
+    ctx.fillStyle = '#8a4fff';
+    for (let j = 0; j < 5; j++) {
+      const y = fy - 5 - j * (height / 5);
+      ctx.beginPath();
+      ctx.ellipse(fx, y, 3, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Overcast overlay
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+}
+
+// ═══════════════════════════════════════════════════════
 // MINI-MAP
 // ═══════════════════════════════════════════════════════
 function drawMiniMap() {
@@ -667,6 +838,46 @@ function drawMiniMap() {
     ctx.fillStyle = e.type === 'boss' ? '#ff0000' : '#ff6b6b';
     ctx.fillRect(mmX + e.x * sx - 1, mmY + e.y * sy - 1, 2, 2);
   });
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAW PATH
+// ═══════════════════════════════════════════════════════
+function drawPath() {
+  let pathColor, pathOutline;
+  if (currentMap === 'backrooms') {
+    pathColor = '#8b6914';
+    pathOutline = '#5a4510';
+  } else if (currentMap === 'zigzag') {
+    pathColor = '#e6d5c3';  // Sandy beige for swamp path
+    pathOutline = '#8b7d6b';  // Brown outline
+  } else {
+    pathColor = PATH_COLOR;
+    pathOutline = null;
+  }
+  // Draw outline first for backrooms-style maps
+  if (pathOutline) {
+    ctx.strokeStyle = pathOutline;
+    ctx.lineWidth = PATH_WIDTH + 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(PATH[0].x, PATH[0].y);
+    for (let i = 1; i < PATH.length; i++) {
+      ctx.lineTo(PATH[i].x, PATH[i].y);
+    }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = pathColor;
+  ctx.lineWidth = PATH_WIDTH;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(PATH[0].x, PATH[0].y);
+  for (let i = 1; i < PATH.length; i++) {
+    ctx.lineTo(PATH[i].x, PATH[i].y);
+  }
+  ctx.stroke();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1381,7 +1592,7 @@ function draw() {
     const sy = (Math.random() - 0.5) * shakeAmount * 2;
     ctx.translate(sx, sy);
   }
-  if (currentMap === 'backrooms') { drawBackroomsBackground(); } else { drawNatureBackground(); }
+  if (currentMap === 'backrooms') { drawBackroomsBackground(); } else if (currentMap === 'zigzag') { drawZigzagPondBackground(); } else { drawNatureBackground(); }
   drawPath();
   drawPowerUps();
   drawTowers();
@@ -1534,74 +1745,6 @@ function buyShopItem(index) {
   addFloatingText(350, 300, item.name + ' upgraded!', '#ffd700');
   sfxPlace();
   updateUI();
-}
-
-function drawPath() {
-  if (currentMap === 'backrooms') {
-    // Carpet hallway border
-    ctx.strokeStyle = '#3d2b1f';
-    ctx.lineWidth = 48;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(PATH[0].x, PATH[0].y);
-    for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
-    ctx.stroke();
-    // Carpet hallway fill
-    ctx.strokeStyle = '#8b4513';
-    ctx.lineWidth = 42;
-    ctx.beginPath();
-    ctx.moveTo(PATH[0].x, PATH[0].y);
-    for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
-    ctx.stroke();
-    // Carpet pattern (dashed center line)
-    ctx.setLineDash([6, 10]);
-    ctx.strokeStyle = 'rgba(61,43,31,0.5)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(PATH[0].x, PATH[0].y);
-    for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    // Entry / Exit markers
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🚪', PATH[0].x + 15, PATH[0].y);
-    ctx.fillText('🏠', PATH[PATH.length - 1].x - 15, PATH[PATH.length - 1].y);
-    return;
-  }
-  // Dirt path border
-  ctx.strokeStyle = '#8B7355';
-  ctx.lineWidth = 48;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(PATH[0].x, PATH[0].y);
-  for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
-  ctx.stroke();
-  // Dirt path fill
-  ctx.strokeStyle = '#C4A46C';
-  ctx.lineWidth = 42;
-  ctx.beginPath();
-  ctx.moveTo(PATH[0].x, PATH[0].y);
-  for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
-  ctx.stroke();
-  // Path detail (dashed center line)
-  ctx.setLineDash([8, 12]);
-  ctx.strokeStyle = 'rgba(139,115,85,0.4)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(PATH[0].x, PATH[0].y);
-  for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  // Entry / Exit markers
-  ctx.font = '20px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🚪', PATH[0].x + 15, PATH[0].y);
-  ctx.fillText('🏠', PATH[PATH.length - 1].x - 15, PATH[PATH.length - 1].y);
 }
 
 // ── Draw Power-ups on Map ──
