@@ -113,8 +113,8 @@ let autoWave = false;
 let activePowerUp = null;
 let powerUpSpawnTimer = 0;
 let powerUpOnMap = null;
-const POWER_UP_TYPES = ['doubleGold', 'damageBoost', 'heal', 'freeze'];
-const POWER_UP_ICONS = { doubleGold: '💰', damageBoost: '🔥', heal: '❤️', freeze: '🧊' };
+const POWER_UP_TYPES = ['doubleGold', 'damageBoost', 'heal', 'freeze', 'tripleGold'];
+const POWER_UP_ICONS = { doubleGold: '💰', damageBoost: '🔥', heal: '❤️', freeze: '🧊', tripleGold: '3️⃣' };
 const POWER_UP_DURATION = 480;
 
 // ── Combo System ──
@@ -191,7 +191,8 @@ const ENEMY_TYPES = {
   tank:   { hp: 300, speed: 0.8, reward: 30,  color: '#8b0000', size: 22, name: 'Brute' },
   healer: { hp: 120, speed: 1.2, reward: 25,  color: '#00ff88', size: 16, name: 'Medic' },
   boss:   { hp: 1000,speed: 0.5, reward: 100, color: '#4a0080', size: 30, name: 'Overlord' },
-  flying: { hp: 60, speed: 2.5, reward: 20, color: '#ffa500', size: 14, name: 'Drone', flying: true }
+  flying: { hp: 60, speed: 2.5, reward: 20, color: '#ffa500', size: 14, name: 'Drone', flying: true },
+  finalBoss: { hp: 10000, speed: 0.4, reward: 1000, color: '#ff0000', size: 50, name: 'Final Boss' }
 };
 
 // ═══════════════════════════════════════════════════════
@@ -921,7 +922,8 @@ function spawnWave() {
       if (currentWave >= 5 && rand < 0.15) type = 'tank';
       if (currentWave >= 4 && rand >= 0.25 && rand < 0.35) type = 'healer';
       if (currentWave >= 6 && rand >= 0.35 && rand < 0.5) type = 'flying';
-      if (currentWave >= 8 && i === enemyCount - 1) type = 'boss';
+      if (currentWave === maxWaves - 1 && i === enemyCount - 1) type = 'finalBoss';
+      else if (currentWave >= 8 && i === enemyCount - 1) type = 'boss';
       spawnEnemy(type);
       enemiesSpawned++;
     }, spawnDelay);
@@ -958,6 +960,10 @@ function spawnEnemy(type) {
 // ═══════════════════════════════════════════════════════
 function placeTower(x, y) {
   if (!selectedTowerType) return;
+  if (towers.length >= MAX_TOWERS) {
+    addFloatingText(x, y, 'Tower limit (35) reached!', '#ff6b6b');
+    return;
+  }
   const type = TOWER_TYPES[selectedTowerType];
   if (gold < type.cost) return;
   for (let i = 0; i < PATH.length - 1; i++) {
@@ -1295,6 +1301,11 @@ function collectPowerUp(pu) {
   }
   if (pu.type === 'doubleGold') addFloatingText(350, 280, '💰 Double Gold Active!', '#ffd700');
   if (pu.type === 'damageBoost') addFloatingText(350, 280, '🔥 Damage Boost Active!', '#ff4500');
+  if (pu.type === 'tripleGold') {
+    const added = gold * 2;
+    gold *= 3;
+    addFloatingText(350, 280, '3️⃣ x3 Gold! +' + added + '💰', '#ffd700');
+  }
   createParticles(pu.x, pu.y, '#ffd700', 20);
   updateUI();
   updatePowerUpUI();
