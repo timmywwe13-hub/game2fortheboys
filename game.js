@@ -737,190 +737,288 @@ function drawNatureBackground() {
 function drawZigzagPondBackground() {
   const time = natureTime;
 
-  // Sky gradient (soft overcast)
-  const skyHeight = BASE_H * 0.35;
+  // Sky - soft gradient with morning light
+  const skyHeight = BASE_H * 0.3;
   const skyGrad = ctx.createLinearGradient(0, 0, 0, skyHeight);
-  skyGrad.addColorStop(0, '#b8c8d8');
-  skyGrad.addColorStop(1, '#d0d8e0');
+  skyGrad.addColorStop(0, '#e8f0f8');
+  skyGrad.addColorStop(0.5, '#d4e8f0');
+  skyGrad.addColorStop(1, '#c8dfe8');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, BASE_W, skyHeight);
 
-  // Water
+  // Far background - very distant trees
+  ctx.fillStyle = '#1a4d2e';
+  for (let x = -50; x < BASE_W + 50; x += 25) {
+    ctx.beginPath();
+    ctx.ellipse(x + 30, skyHeight - 20, 40, 25, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Water - vibrant emerald green
   const waterY = skyHeight;
   const waterH = BASE_H - waterY;
   const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
-  waterGrad.addColorStop(0, '#6ca875');
-  waterGrad.addColorStop(1, '#4a8a5a');
+  waterGrad.addColorStop(0, '#52a876');
+  waterGrad.addColorStop(0.4, '#4a9f6f');
+  waterGrad.addColorStop(1, '#3a8f5f');
   ctx.fillStyle = waterGrad;
   ctx.fillRect(0, waterY, BASE_W, waterH);
 
-  // Water ripples
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 20; i++) {
-    const y = waterY + 20 + i * 25;
+  // Animated water ripples with more detail
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 25; i++) {
+    const y = waterY + 15 + i * 22;
     ctx.beginPath();
     ctx.moveTo(0, y);
-    for (let x = 0; x <= BASE_W; x += 8) {
-      const waveY = y + Math.sin(x * 0.015 + time * 0.5) * 2;
+    for (let x = 0; x <= BASE_W; x += 6) {
+      const waveY = y + Math.sin(x * 0.018 + time * 0.6) * 2.5 + Math.sin(x * 0.008) * 1.5;
       ctx.lineTo(x, waveY);
     }
     ctx.stroke();
   }
 
-  // Dense background foliage (layered trees)
-  ctx.fillStyle = '#2d5a3d';
-  for (let x = 0; x < BASE_W; x += 12) {
-    const h = 20 + ((x * 0.12) % 15);
-    ctx.fillRect(x, waterY - h - 5, 12, h);
+  // Distant layered vegetation (3 layers for depth)
+  ctx.fillStyle = '#1e5a35';
+  for (let x = 0; x < BASE_W; x += 18) {
+    const h = 18 + ((x * 0.15) % 12);
+    ctx.fillRect(x, waterY - h - 8, 18, h);
   }
   
-  // More distant dark green layer
-  ctx.fillStyle = 'rgba(30, 50, 35, 0.7)';
-  for (let x = 0; x < BASE_W; x += 20) {
-    const h = 25 + ((x * 0.1) % 12);
-    ctx.fillRect(x, waterY - h - 15, 20, h);
+  ctx.fillStyle = 'rgba(20, 60, 40, 0.8)';
+  for (let x = 0; x < BASE_W; x += 25) {
+    const h = 22 + ((x * 0.12) % 15);
+    ctx.fillRect(x, waterY - h - 18, 25, h);
   }
 
-  // Weeping willow trees (5 - more for lush feel)
-  const willowCount = 5;
-  for (let w = 0; w < willowCount; w++) {
-    const wx = (BASE_W * (0.1 + w * 0.2));
-    const trunkY = waterY - 10;
+  // Major weeping willow trees (6 - create a forest feel)
+  const willowPositions = [0.08, 0.2, 0.32, 0.62, 0.75, 0.92];
+  willowPositions.forEach((pos, idx) => {
+    const wx = BASE_W * pos;
+    const trunkY = waterY - 5;
+    const heightVariation = idx % 2 === 0 ? 0 : 5;
+    
     // Trunk
-    ctx.fillStyle = '#6b4423';
-    ctx.fillRect(wx - 7, trunkY - 85, 14, 85);
-    // Dense foliage canopy
-    ctx.fillStyle = '#3a7c3a';
+    ctx.fillStyle = '#7a5230';
+    ctx.fillRect(wx - 8, trunkY - 90 - heightVariation, 16, 90);
+    
+    // Dense foliage canopy - multiple overlapping circles
+    ctx.fillStyle = '#2d7a3d';
     ctx.beginPath();
-    ctx.ellipse(wx, trunkY - 85, 50, 35, 0, 0, Math.PI * 2);
+    ctx.ellipse(wx, trunkY - 85, 60, 40, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Inner lighter foliage
-    ctx.fillStyle = '#4a9c4a';
+    
+    ctx.fillStyle = '#3a9047';
     ctx.beginPath();
-    ctx.ellipse(wx, trunkY - 80, 35, 25, 0, 0, Math.PI * 2);
+    ctx.ellipse(wx - 15, trunkY - 80, 40, 35, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Drooping branches
+    
+    ctx.fillStyle = '#3a9047';
+    ctx.beginPath();
+    ctx.ellipse(wx + 15, trunkY - 80, 40, 35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Inner bright foliage
+    ctx.fillStyle = '#5aac5a';
+    ctx.beginPath();
+    ctx.ellipse(wx, trunkY - 75, 35, 28, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Drooping branches with leaves
     ctx.strokeStyle = '#5aac5a';
-    ctx.lineWidth = 2;
-    const branchCount = 12;
+    ctx.lineWidth = 2.5;
+    const branchCount = 14;
     for (let i = 0; i < branchCount; i++) {
-      const offsetX = (i - branchCount/2) * 9;
+      const offsetX = (i - branchCount/2) * 8.5;
       const startX = wx + offsetX;
-      const startY = trunkY - 70;
-      const ctrlX = startX + 18;
-      const ctrlY = startY + 35;
-      const endX = startX + 45;
-      const endY = startY + 25 + Math.abs(i - branchCount/2) * 4;
+      const startY = trunkY - 65;
+      const ctrlX = startX + 20;
+      const ctrlY = startY + 40;
+      const endX = startX + 50;
+      const endY = startY + 30 + Math.abs(i - branchCount/2) * 3.5;
+      
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
       ctx.stroke();
-    }
-  }
-
-  // Flowering bushes (purple/pink hydrangeas on banks)
-  const bushCount = 6;
-  for (let b = 0; b < bushCount; b++) {
-    const bx = (BASE_W * (0.05 + b * 0.16));
-    const by = waterY - 5;
-    // Bush body
-    ctx.fillStyle = '#3d6b3d';
-    ctx.beginPath();
-    ctx.ellipse(bx, by - 15, 25, 20, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Flowers (hydrangea clusters)
-    const flowerCount = 12;
-    for (let f = 0; f < flowerCount; f++) {
-      const angle = (f / flowerCount) * Math.PI * 2;
-      const px = bx + Math.cos(angle) * 20;
-      const py = by - 15 + Math.sin(angle) * 15;
-      ctx.fillStyle = f % 3 === 0 ? '#d45ed4' : (f % 3 === 1 ? '#e87cee' : '#ff7eb3');
-      for (let petal = 0; petal < 5; petal++) {
-        const petalAngle = (petal / 5) * Math.PI * 2;
-        const petX = px + Math.cos(petalAngle) * 3;
-        const petY = py + Math.sin(petalAngle) * 3;
+      
+      // Leaf clusters at branch ends
+      ctx.fillStyle = '#4a9c4a';
+      for (let l = 0; l < 3; l++) {
+        const lx = endX + (Math.random() - 0.5) * 8;
+        const ly = endY + (Math.random() - 0.5) * 8;
         ctx.beginPath();
-        ctx.arc(petX, petY, 2, 0, Math.PI * 2);
+        ctx.ellipse(lx, ly, 5, 4, Math.random() * Math.PI, 0, Math.PI * 2);
         ctx.fill();
       }
     }
-  }
+  });
 
-  // Lily pads with flowers
-  const lilyCount = 35;
-  for (let i = 0; i < lilyCount; i++) {
-    const lx = (i * 37 + 13) % BASE_W;
-    const ly = waterY + 30 + (i * 23 % (waterH - 80));
-    const size = 8 + (i % 5);
-    ctx.fillStyle = '#4a8c5a';
+  // Ornamental flowering shrubs/bushes (pink and purple hydrangeas)
+  const bushPositions = [0.06, 0.18, 0.35, 0.48, 0.64, 0.8, 0.94];
+  bushPositions.forEach((pos, idx) => {
+    const bx = BASE_W * pos;
+    const by = waterY - 8;
+    
+    // Bush body (dark green)
+    ctx.fillStyle = '#2d6b3d';
     ctx.beginPath();
-    ctx.ellipse(lx, ly, size, size * 0.7, 0, 0, Math.PI * 2);
+    ctx.ellipse(bx, by - 18, 28, 22, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Slit
-    ctx.strokeStyle = '#3a6c4a';
-    ctx.lineWidth = 1;
+    
+    // Hydrangea flower clusters
+    const flowerCount = 16;
+    const colors = ['#e856cc', '#d85ec8', '#ff85d0', '#ff66cc', '#cc44dd', '#dd55ee'];
+    
+    for (let f = 0; f < flowerCount; f++) {
+      const angle = (f / flowerCount) * Math.PI * 2 + time * 0.1;
+      const dist = 18 + Math.sin(time * 0.05 + f) * 2;
+      const px = bx + Math.cos(angle) * dist;
+      const py = by - 18 + Math.sin(angle) * dist;
+      
+      ctx.fillStyle = colors[f % colors.length];
+      
+      // Flower petals (cluster of small circles)
+      for (let petal = 0; petal < 5; petal++) {
+        const petalAngle = (petal / 5) * Math.PI * 2;
+        const petX = px + Math.cos(petalAngle) * 3.5;
+        const petY = py + Math.sin(petalAngle) * 3.5;
+        ctx.beginPath();
+        ctx.arc(petX, petY, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+
+  // Lily pads with elegant flowers
+  const lilyCount = 40;
+  for (let i = 0; i < lilyCount; i++) {
+    const lx = (i * 32.5 + 13) % BASE_W;
+    const ly = waterY + 35 + (i * 19 % (waterH - 80));
+    const size = 9 + (i % 6);
+    
+    // Lily pad - darker green with dimension
+    ctx.fillStyle = '#4a9c5a';
     ctx.beginPath();
-    ctx.moveTo(lx, ly - size * 0.4);
-    ctx.lineTo(lx, ly + size * 0.4);
+    ctx.ellipse(lx, ly, size, size * 0.65, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Highlight on lily pad
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.ellipse(lx - 2, ly - 2, size * 0.4, size * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Slit
+    ctx.strokeStyle = '#2a7c3a';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(lx, ly - size * 0.35);
+    ctx.lineTo(lx, ly + size * 0.35);
     ctx.stroke();
-    // Small flower on lily pad
-    if (i % 3 === 0) {
-      ctx.fillStyle = i % 2 === 0 ? '#ff9ed9' : '#ffb3e6';
+    
+    // Small lotus flowers on lily pads
+    if (i % 2 === 0) {
+      ctx.fillStyle = i % 4 === 0 ? '#ff99dd' : '#ffaaee';
+      for (let petal = 0; petal < 5; petal++) {
+        const angle = (petal / 5) * Math.PI * 2;
+        const petX = lx + Math.cos(angle) * 4;
+        const petY = ly - size - 3 + Math.sin(angle) * 4;
+        ctx.beginPath();
+        ctx.ellipse(petX, petY, 1.8, 2.5, angle, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Flower center
+      ctx.fillStyle = '#ffdd99';
       ctx.beginPath();
-      ctx.arc(lx, ly - size - 2, 2, 0, Math.PI * 2);
+      ctx.arc(lx, ly - size - 3, 1.5, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  // Fallen leaves on water
-  const leafCount = 20;
-  for (let i = 0; i < leafCount; i++) {
-    const lx = (i * 51 + 7) % BASE_W;
-    const ly = waterY + 50 + (i * 31 % (waterH - 100));
-    const size = 3 + (i % 4);
-    ctx.fillStyle = i % 3 === 0 ? '#d4a017' : (i % 3 === 1 ? '#c1441e' : '#e0b030');
+  // Floating flower petals (animated)
+  ctx.fillStyle = 'rgba(255, 150, 200, 0.6)';
+  for (let i = 0; i < 8; i++) {
+    const x = (BASE_W * (0.1 + i * 0.1) + time * 15) % BASE_W;
+    const y = waterY + 20 + Math.sin(time * 0.05 + i) * 30;
     ctx.beginPath();
-    ctx.arc(lx, ly, size, 0, Math.PI * 2);
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Banks (edges) with lush foliage
-  ctx.fillStyle = '#3a6b4a';
-  // Left bank curve
+  // Fallen leaves on water (various autumn colors)
+  const leafCount = 25;
+  for (let i = 0; i < leafCount; i++) {
+    const lx = (i * 43 + 7 + time * 5) % BASE_W;
+    const ly = waterY + 60 + (i * 27 % (waterH - 100));
+    const size = 3.5 + (i % 5);
+    const leafColors = ['#d4a017', '#c1441e', '#e0b030', '#c87533', '#cc5c1a'];
+    ctx.fillStyle = leafColors[i % leafColors.length];
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, size, size * 0.6, (time * 0.08 + i) * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Banks and shores (lush green with depth)
+  ctx.fillStyle = '#3d7a4d';
+  // Left bank
   ctx.beginPath();
   ctx.moveTo(0, BASE_H);
-  ctx.lineTo(0, waterY - 20);
-  ctx.quadraticCurveTo(60, waterY - 50, 120, waterY - 10);
-  ctx.lineTo(120, BASE_H);
+  ctx.lineTo(0, waterY - 15);
+  ctx.quadraticCurveTo(70, waterY - 55, 130, waterY - 5);
+  ctx.lineTo(130, BASE_H);
   ctx.fill();
-  // Right bank curve
+  
+  // Right bank
   ctx.beginPath();
   ctx.moveTo(BASE_W, BASE_H);
-  ctx.lineTo(BASE_W, waterY - 30);
-  ctx.quadraticCurveTo(BASE_W - 80, waterY - 60, BASE_W - 180, waterY - 15);
-  ctx.lineTo(BASE_W - 180, BASE_H);
+  ctx.lineTo(BASE_W, waterY - 25);
+  ctx.quadraticCurveTo(BASE_W - 90, waterY - 65, BASE_W - 170, waterY - 8);
+  ctx.lineTo(BASE_W - 170, BASE_H);
   ctx.fill();
 
-  // Foreground garden flowers (lush pink/purple hydrangeas)
-  // Hydrangea clusters (left side)
-  for (let cluster = 0; cluster < 8; cluster++) {
-    const cx = 15 + cluster * 13;
-    const cy = BASE_H - 15;
-    const flowerCount = 20;
-    for (let i = 0; i < flowerCount; i++) {
-      const angle = (i / flowerCount) * Math.PI * 2;
-      const fx = cx + Math.cos(angle) * 12;
-      const fy = cy - 20 + Math.sin(angle) * 12;
-      ctx.fillStyle = i % 3 === 0 ? '#d45ed4' : (i % 3 === 1 ? '#e87cee' : '#ff7eb3');
+  // Foreground - massive flower garden (left & right edges)
+  const foregroundFlowers = [
+    { x: 12, y: BASE_H - 20, color: '#ff77cc', count: 25 },
+    { x: 28, y: BASE_H - 18, color: '#ff99dd', count: 25 },
+    { x: 42, y: BASE_H - 22, color: '#dd44bb', count: 25 },
+    { x: BASE_W - 15, y: BASE_H - 20, color: '#ff77cc', count: 25 },
+    { x: BASE_W - 30, y: BASE_H - 18, color: '#ff99dd', count: 25 },
+  ];
+
+  foregroundFlowers.forEach(flower => {
+    for (let i = 0; i < flower.count; i++) {
+      const angle = (i / flower.count) * Math.PI * 2;
+      const dist = 8 + Math.sin(time * 0.06 + i) * 3;
+      const fx = flower.x + Math.cos(angle) * dist;
+      const fy = flower.y + Math.sin(angle) * dist;
+      
+      ctx.fillStyle = flower.color;
+      for (let petal = 0; petal < 5; petal++) {
+        const petalAngle = (petal / 5) * Math.PI * 2;
+        const petX = fx + Math.cos(petalAngle) * 2.5;
+        const petY = fy + Math.sin(petalAngle) * 2.5;
+        ctx.beginPath();
+        ctx.arc(petX, petY, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Yellow center
+      ctx.fillStyle = '#ffee88';
       ctx.beginPath();
-      ctx.arc(fx, fy, 2.5, 0, Math.PI * 2);
+      ctx.arc(fx, fy, 1.2, 0, Math.PI * 2);
       ctx.fill();
     }
-  }
+  });
 
-  // Overcast overlay
-  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+  // Soft vignette overlay (darker edges)
+  const vignetteGrad = ctx.createRadialGradient(BASE_W/2, BASE_H/2, 150, BASE_W/2, BASE_H/2, 400);
+  vignetteGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  vignetteGrad.addColorStop(1, 'rgba(0,0,0,0.15)');
+  ctx.fillStyle = vignetteGrad;
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+
+  // Soft light overlay
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
   ctx.fillRect(0, 0, BASE_W, BASE_H);
 }
 
