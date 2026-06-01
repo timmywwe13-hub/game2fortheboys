@@ -1074,7 +1074,14 @@ function drawPath() {
     pathColor = PATH_COLOR;
     pathOutline = null;
   }
-  // Draw outline first for backrooms-style maps
+
+  // Add grounding shadow for depth
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 4;
+
+  // Draw outline first for backrooms-style maps (casts the shadow)
   if (pathOutline) {
     ctx.strokeStyle = pathOutline;
     ctx.lineWidth = PATH_WIDTH + 6;
@@ -1087,6 +1094,13 @@ function drawPath() {
     }
     ctx.stroke();
   }
+
+  // Reset shadow for clean main path
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
   ctx.strokeStyle = pathColor;
   ctx.lineWidth = PATH_WIDTH;
   ctx.lineCap = 'round';
@@ -1097,18 +1111,7 @@ function drawPath() {
     ctx.lineTo(PATH[i].x, PATH[i].y);
   }
   ctx.stroke();
-  // Add subtle center highlight for zigzag to simulate worn wood
-  if (currentMap === 'zigzag') {
-    ctx.strokeStyle = '#f5e6d3'; // lighter beige
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(PATH[0].x, PATH[0].y);
-    for (let i = 1; i < PATH.length; i++) {
-      ctx.lineTo(PATH[i].x, PATH[i].y);
-    }
-    ctx.stroke();
-  }
-}
+
 
 // ═══════════════════════════════════════════════════════
 // LOBBY
