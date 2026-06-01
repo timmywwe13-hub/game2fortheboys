@@ -205,11 +205,15 @@ const ENEMY_TYPES = {
 const BASE_W = 700, BASE_H = 600;
 
 function resizeCanvas() {
-  const container = document.getElementById('gameArea');
-  if (!container) return;
-  const maxW = container.clientWidth || window.innerWidth;
-  const maxH = window.innerHeight * 0.65;
-  const scale = Math.min(maxW / BASE_W, maxH / BASE_H, 1);
+  // Compute available width for the canvas: window width minus sidebar and gap
+  const sidebarWidth = 240; // from CSS
+  const gap = 20;
+  const availableW = window.innerWidth - sidebarWidth - gap;
+  const availableH = window.innerHeight * 0.65;
+  // If availableW is not positive, ignore it (use height only)
+  const scaleW = availableW > 0 ? availableW / BASE_W : Infinity;
+  const scaleH = availableH / BASE_H;
+  const scale = Math.min(scaleW, scaleH, 1);
   canvas.style.width = (BASE_W * scale) + 'px';
   canvas.style.height = (BASE_H * scale) + 'px';
 }
@@ -733,11 +737,11 @@ function drawNatureBackground() {
 function drawZigzagPondBackground() {
   const time = natureTime;
 
-  // Sky gradient (overcast)
+  // Sky gradient (soft overcast)
   const skyHeight = BASE_H * 0.35;
   const skyGrad = ctx.createLinearGradient(0, 0, 0, skyHeight);
-  skyGrad.addColorStop(0, '#a0a0a0');
-  skyGrad.addColorStop(1, '#c8c8c8');
+  skyGrad.addColorStop(0, '#b8c8d8');
+  skyGrad.addColorStop(1, '#d0d8e0');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, BASE_W, skyHeight);
 
@@ -745,13 +749,13 @@ function drawZigzagPondBackground() {
   const waterY = skyHeight;
   const waterH = BASE_H - waterY;
   const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
-  waterGrad.addColorStop(0, '#5a9c6a');
-  waterGrad.addColorStop(1, '#3a6c4a');
+  waterGrad.addColorStop(0, '#6ca875');
+  waterGrad.addColorStop(1, '#4a8a5a');
   ctx.fillStyle = waterGrad;
   ctx.fillRect(0, waterY, BASE_W, waterH);
 
   // Water ripples
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 1;
   for (let i = 0; i < 20; i++) {
     const y = waterY + 20 + i * 25;
@@ -764,78 +768,125 @@ function drawZigzagPondBackground() {
     ctx.stroke();
   }
 
-  // Distant shrubbery at horizon
-  ctx.fillStyle = '#2e5a3b';
-  for (let x = 0; x < BASE_W; x += 15) {
-    const h = 15 + ((x * 0.1) % 10);
-    ctx.fillRect(x, waterY - h, 15, h);
+  // Dense background foliage (layered trees)
+  ctx.fillStyle = '#2d5a3d';
+  for (let x = 0; x < BASE_W; x += 12) {
+    const h = 20 + ((x * 0.12) % 15);
+    ctx.fillRect(x, waterY - h - 5, 12, h);
+  }
+  
+  // More distant dark green layer
+  ctx.fillStyle = 'rgba(30, 50, 35, 0.7)';
+  for (let x = 0; x < BASE_W; x += 20) {
+    const h = 25 + ((x * 0.1) % 12);
+    ctx.fillRect(x, waterY - h - 15, 20, h);
   }
 
-  // Weeping willow trees (3)
-  const willowCount = 3;
+  // Weeping willow trees (5 - more for lush feel)
+  const willowCount = 5;
   for (let w = 0; w < willowCount; w++) {
-    const wx = (BASE_W * (0.2 + w * 0.3));
+    const wx = (BASE_W * (0.1 + w * 0.2));
     const trunkY = waterY - 10;
     // Trunk
-    ctx.fillStyle = '#5c3a1e';
-    ctx.fillRect(wx - 6, trunkY - 80, 12, 80);
-    // Branches
-    ctx.strokeStyle = '#4a8c2a';
-    ctx.lineWidth = 3;
-    const branchCount = 10;
+    ctx.fillStyle = '#6b4423';
+    ctx.fillRect(wx - 7, trunkY - 85, 14, 85);
+    // Dense foliage canopy
+    ctx.fillStyle = '#3a7c3a';
+    ctx.beginPath();
+    ctx.ellipse(wx, trunkY - 85, 50, 35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Inner lighter foliage
+    ctx.fillStyle = '#4a9c4a';
+    ctx.beginPath();
+    ctx.ellipse(wx, trunkY - 80, 35, 25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Drooping branches
+    ctx.strokeStyle = '#5aac5a';
+    ctx.lineWidth = 2;
+    const branchCount = 12;
     for (let i = 0; i < branchCount; i++) {
-      const offsetX = (i - branchCount/2) * 10;
+      const offsetX = (i - branchCount/2) * 9;
       const startX = wx + offsetX;
-      const startY = trunkY - 80;
-      const ctrlX = startX + 15;
-      const ctrlY = startY + 40;
-      const endX = startX + 40;
-      const endY = startY + 20 + Math.abs(i - branchCount/2) * 5;
+      const startY = trunkY - 70;
+      const ctrlX = startX + 18;
+      const ctrlY = startY + 35;
+      const endX = startX + 45;
+      const endY = startY + 25 + Math.abs(i - branchCount/2) * 4;
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
       ctx.stroke();
-      // Leaf cluster
-      ctx.fillStyle = '#3a6c2a';
-      ctx.beginPath();
-      ctx.ellipse(endX, endY, 10, 5, Math.atan2(endY - ctrlY, endX - ctrlX), 0, Math.PI * 2);
-      ctx.fill();
     }
   }
 
-  // Lily pads
-  const lilyCount = 30;
+  // Flowering bushes (purple/pink hydrangeas on banks)
+  const bushCount = 6;
+  for (let b = 0; b < bushCount; b++) {
+    const bx = (BASE_W * (0.05 + b * 0.16));
+    const by = waterY - 5;
+    // Bush body
+    ctx.fillStyle = '#3d6b3d';
+    ctx.beginPath();
+    ctx.ellipse(bx, by - 15, 25, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Flowers (hydrangea clusters)
+    const flowerCount = 12;
+    for (let f = 0; f < flowerCount; f++) {
+      const angle = (f / flowerCount) * Math.PI * 2;
+      const px = bx + Math.cos(angle) * 20;
+      const py = by - 15 + Math.sin(angle) * 15;
+      ctx.fillStyle = f % 3 === 0 ? '#d45ed4' : (f % 3 === 1 ? '#e87cee' : '#ff7eb3');
+      for (let petal = 0; petal < 5; petal++) {
+        const petalAngle = (petal / 5) * Math.PI * 2;
+        const petX = px + Math.cos(petalAngle) * 3;
+        const petY = py + Math.sin(petalAngle) * 3;
+        ctx.beginPath();
+        ctx.arc(petX, petY, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // Lily pads with flowers
+  const lilyCount = 35;
   for (let i = 0; i < lilyCount; i++) {
     const lx = (i * 37 + 13) % BASE_W;
     const ly = waterY + 30 + (i * 23 % (waterH - 80));
     const size = 8 + (i % 5);
-    ctx.fillStyle = '#3a7c4a';
+    ctx.fillStyle = '#4a8c5a';
     ctx.beginPath();
     ctx.ellipse(lx, ly, size, size * 0.7, 0, 0, Math.PI * 2);
     ctx.fill();
     // Slit
-    ctx.strokeStyle = '#2a5c3a';
+    ctx.strokeStyle = '#3a6c4a';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(lx, ly - size * 0.4);
     ctx.lineTo(lx, ly + size * 0.4);
     ctx.stroke();
+    // Small flower on lily pad
+    if (i % 3 === 0) {
+      ctx.fillStyle = i % 2 === 0 ? '#ff9ed9' : '#ffb3e6';
+      ctx.beginPath();
+      ctx.arc(lx, ly - size - 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // Fallen leaves on water
-  const leafCount = 15;
+  const leafCount = 20;
   for (let i = 0; i < leafCount; i++) {
     const lx = (i * 51 + 7) % BASE_W;
     const ly = waterY + 50 + (i * 31 % (waterH - 100));
     const size = 3 + (i % 4);
-    ctx.fillStyle = i % 2 === 0 ? '#c1441e' : '#d4a017';
+    ctx.fillStyle = i % 3 === 0 ? '#d4a017' : (i % 3 === 1 ? '#c1441e' : '#e0b030');
     ctx.beginPath();
     ctx.arc(lx, ly, size, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Banks (edges) with bushes
-  ctx.fillStyle = '#2e5a3b';
+  // Banks (edges) with lush foliage
+  ctx.fillStyle = '#3a6b4a';
   // Left bank curve
   ctx.beginPath();
   ctx.moveTo(0, BASE_H);
@@ -851,45 +902,25 @@ function drawZigzagPondBackground() {
   ctx.lineTo(BASE_W - 180, BASE_H);
   ctx.fill();
 
-  // Foreground flowers (bottom left)
-  // Pink roses
-  for (let i = 0; i < 10; i++) {
-    const fx = 20 + (i * 11) % 80;
-    const fy = BASE_H - 10 - (i * 7) % 60;
-    const size = 4 + (i % 3);
-    ctx.fillStyle = '#ff7eb3';
-    ctx.beginPath();
-    ctx.arc(fx, fy, size, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath();
-    ctx.arc(fx, fy, size * 0.4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  // Purple foxglove
-  for (let i = 0; i < 6; i++) {
-    const fx = 30 + (i * 17) % 70;
-    const fy = BASE_H - 20 - (i * 13) % 50;
-    const height = 30 + (i % 3) * 10;
-    // Stem
-    ctx.strokeStyle = '#228b22';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(fx, fy);
-    ctx.lineTo(fx, fy - height);
-    ctx.stroke();
-    // Flowers
-    ctx.fillStyle = '#8a4fff';
-    for (let j = 0; j < 5; j++) {
-      const y = fy - 5 - j * (height / 5);
+  // Foreground garden flowers (lush pink/purple hydrangeas)
+  // Hydrangea clusters (left side)
+  for (let cluster = 0; cluster < 8; cluster++) {
+    const cx = 15 + cluster * 13;
+    const cy = BASE_H - 15;
+    const flowerCount = 20;
+    for (let i = 0; i < flowerCount; i++) {
+      const angle = (i / flowerCount) * Math.PI * 2;
+      const fx = cx + Math.cos(angle) * 12;
+      const fy = cy - 20 + Math.sin(angle) * 12;
+      ctx.fillStyle = i % 3 === 0 ? '#d45ed4' : (i % 3 === 1 ? '#e87cee' : '#ff7eb3');
       ctx.beginPath();
-      ctx.ellipse(fx, y, 3, 5, 0, 0, Math.PI * 2);
+      ctx.arc(fx, fy, 2.5, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
   // Overcast overlay
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
   ctx.fillRect(0, 0, BASE_W, BASE_H);
 }
 
