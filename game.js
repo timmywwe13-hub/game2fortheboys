@@ -28,25 +28,9 @@ const comboMultEl = document.getElementById('comboMult');
 
 // ── Zigzag Map Wallpaper ──
 let zigzagWallpaper = new Image();
-// Try multiple wallpaper options
-const wallpaperOptions = ['wallpaper_for_zigzag.jpg', 'newwallpaper.png'];
-let wallpaperLoaded = false;
-function loadZigzagWallpaper(index = 0) {
-  if (index >= wallpaperOptions.length) {
-    console.log('No wallpaper available, using gradient fallback');
-    return;
-  }
-  zigzagWallpaper.src = wallpaperOptions[index];
-}
-zigzagWallpaper.onload = () => {
-  wallpaperLoaded = true;
-  console.log('Zigzag wallpaper loaded successfully');
-};
-zigzagWallpaper.onerror = () => {
-  console.log('Failed to load wallpaper, trying next option...');
-  loadZigzagWallpaper(wallpaperOptions.indexOf(zigzagWallpaper.src) + 1);
-};
-loadZigzagWallpaper();
+zigzagWallpaper.src = 'newwallpaper.png';
+zigzagWallpaper.onload = () => console.log('Zigzag wallpaper loaded successfully');
+zigzagWallpaper.onerror = () => console.log('Zigzag wallpaper failed to load, using fallback');
 
 // ── Game State ──
 let gameRunning = false;
@@ -680,7 +664,7 @@ function drawZigzagPondBackground() {
   const waterH = BASE_H - waterY;
 
   // Sky background - use wallpaper if loaded, otherwise gradient
-  if (wallpaperLoaded && zigzagWallpaper.complete && zigzagWallpaper.naturalWidth > 0) {
+  if (zigzagWallpaper.complete && zigzagWallpaper.naturalWidth > 0) {
     // Draw wallpaper covering entire canvas (cover scaling)
     const imgRatio = zigzagWallpaper.width / zigzagWallpaper.height;
     const canvasRatio = BASE_W / BASE_H;
