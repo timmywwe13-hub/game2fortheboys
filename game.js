@@ -1139,7 +1139,7 @@ function drawPath() {
     ctx.lineTo(PATH[i].x, PATH[i].y);
   }
   ctx.stroke();
-
+}
 
 // ═══════════════════════════════════════════════════════
 // LOBBY
