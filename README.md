@@ -4,6 +4,10 @@ A browser-based Tower Defense game built with vanilla HTML, CSS, and JavaScript.
 
 ![Tower Defense Game](https://img.shields.io/badge/Status-Playable-brightgreen) ![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange) ![No Dependencies](https://img.shields.io/badge/Dependencies-None-blue)
 
+### 🎮 [Play Now!](https://timmywwe13-hub.github.io/game2fortheboys/)
+
+**Live Demo:** [https://timmywwe13-hub.github.io/game2fortheboys/](https://timmywwe13-hub.github.io/game2fortheboys/)
+
 ## 🎮 Features
 
 - **6 Tower Types** — Arrow, Cannon, Ice, Lightning, Sniper, and Poison towers, each with unique mechanics

@@ -18,6 +18,20 @@ Desktop.ini
 *.sublime-project
 *.sublime-workspace
 
+# OS files
+.env
+.env.local
+*.log
+
+# Node/npm (if used in future)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs (if bundled)
+dist/
+build/
+
 # Logs
 *.log
 npm-debug.log*

@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 
-// TOWER DEFENSE — game.js v3.2
+// TOWER DEFENSE — game.js v3.3
 // ═══════════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -375,90 +375,7 @@ function generateBackroomsElements() {
 function generateZigzagFloralElements() {
   natureElements = [];
   ambientParticles = [];
-
-  const waterY = BASE_H * 0.35;
-
-  // Helper to avoid path placement
-  function isNearPath(x, y, threshold = 30) {
-    for (let i = 0; i < PATH.length; i++) {
-      const dx = x - PATH[i].x;
-      const dy = y - PATH[i].y;
-      if (dx*dx + dy*dy < threshold*threshold) return true;
-    }
-    return false;
-  }
-
-  // Water lilies (flowers) on the pond
-  const flowerCount = 80;
-  const flowerColors = ['#ffffff', '#fff0f0', '#ffe4b5', '#ffd700', '#ff69b4', '#87ceeb', '#e6e6fa', '#ffb6c1'];
-  for (let i = 0; i < flowerCount; i++) {
-    let fx, fy;
-    let attempts = 0;
-    do {
-      fx = Math.random() * BASE_W;
-      fy = waterY + Math.random() * (BASE_H - waterY - 30);
-      attempts++;
-    } while (isNearPath(fx, fy, 30) && attempts < 100);
-    natureElements.push({
-      type: 'flower',
-      x: fx,
-      y: fy,
-      color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
-      size: 5 + Math.random() * 5,
-      petals: 5 + Math.floor(Math.random() * 4)
-    });
-  }
-
-  // Butterflies
-  const butterflyCount = 12;
-  const butterflyColors = ['#ff69b4', '#ffd700', '#87ceeb', '#da70d6', '#ff6347', '#00ffff'];
-  for (let i = 0; i < butterflyCount; i++) {
-    natureElements.push({
-      type: 'butterfly',
-      x: Math.random() * BASE_W,
-      y: waterY + Math.random() * (BASE_H - waterY - 20),
-      color: butterflyColors[Math.floor(Math.random() * butterflyColors.length)],
-      vx: (Math.random() - 0.5) * 1.2,
-      vy: (Math.random() - 0.5) * 0.8,
-      wingPhase: Math.random() * Math.PI * 2
-    });
-  }
-
-  // Grass on the banks (edges)
-  const grassCount = 30;
-  for (let i = 0; i < grassCount; i++) {
-    let gx, gy;
-    let attempts = 0;
-    do {
-      const side = Math.random() < 0.5 ? -1 : 1;
-      gx = side === -1 ? 10 + Math.random() * 100 : BASE_W - 110 + Math.random() * 100;
-      gy = waterY + 10 + Math.random() * (BASE_H - waterY - 40);
-      attempts++;
-    } while (isNearPath(gx, gy, 30) && attempts < 100);
-    natureElements.push({
-      type: 'grass',
-      x: gx,
-      y: gy,
-      h: 8 + Math.random() * 12,
-      sway: Math.random() * Math.PI * 2
-    });
-  }
-
-  // Ambient floating particles (pollen)
-  const particleCount = 20;
-  for (let i = 0; i < particleCount; i++) {
-    ambientParticles.push({
-      x: Math.random() * BASE_W,
-      y: waterY + Math.random() * (BASE_H - waterY - 20),
-      vx: (Math.random() - 0.5) * 0.2,
-      vy: (Math.random() - 0.5) * 0.2 - 0.1,
-      size: 1 + Math.random() * 2,
-      rot: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.05,
-      color: Math.random() > 0.5 ? '#fff8dc' : '#ffd700',
-      alpha: 0.3 + Math.random() * 0.5
-    });
-  }
+  // No elements for zigzag map
 }
 
 function drawBackroomsBackground() {
@@ -774,13 +691,7 @@ function drawZigzagPondBackground() {
     ctx.fillRect(0, 0, BASE_W, skyHeight);
   }
 
-  // Far background - very distant trees
-  ctx.fillStyle = '#1a4d2e';
-  for (let x = -50; x < BASE_W + 50; x += 25) {
-    ctx.beginPath();
-    ctx.ellipse(x + 30, skyHeight - 20, 40, 25, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
+
 
   // Water area - only draw gradient if wallpaper not loaded (wallpaper covers whole canvas)
   if (!zigzagWallpaper.complete || zigzagWallpaper.naturalWidth === 0) {
@@ -806,237 +717,21 @@ function drawZigzagPondBackground() {
     ctx.stroke();
   }
 
-  // Distant layered vegetation (3 layers for depth)
-  ctx.fillStyle = '#1e5a35';
-  for (let x = 0; x < BASE_W; x += 18) {
-    const h = 18 + ((x * 0.15) % 12);
-    ctx.fillRect(x, waterY - h - 8, 18, h);
-  }
-  
-  ctx.fillStyle = 'rgba(20, 60, 40, 0.8)';
-  for (let x = 0; x < BASE_W; x += 25) {
-    const h = 22 + ((x * 0.12) % 15);
-    ctx.fillRect(x, waterY - h - 18, 25, h);
-  }
 
-  // Major weeping willow trees (6 - create a forest feel)
-  const willowPositions = [0.08, 0.2, 0.32, 0.62, 0.75, 0.92];
-  willowPositions.forEach((pos, idx) => {
-    const wx = BASE_W * pos;
-    const trunkY = waterY - 5;
-    const heightVariation = idx % 2 === 0 ? 0 : 5;
-    
-    // Trunk
-    ctx.fillStyle = '#7a5230';
-    ctx.fillRect(wx - 8, trunkY - 90 - heightVariation, 16, 90);
-    
-    // Dense foliage canopy - multiple overlapping circles
-    ctx.fillStyle = '#2d7a3d';
-    ctx.beginPath();
-    ctx.ellipse(wx, trunkY - 85, 60, 40, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = '#3a9047';
-    ctx.beginPath();
-    ctx.ellipse(wx - 15, trunkY - 80, 40, 35, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = '#3a9047';
-    ctx.beginPath();
-    ctx.ellipse(wx + 15, trunkY - 80, 40, 35, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Inner bright foliage
-    ctx.fillStyle = '#5aac5a';
-    ctx.beginPath();
-    ctx.ellipse(wx, trunkY - 75, 35, 28, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Drooping branches with leaves
-    ctx.strokeStyle = '#5aac5a';
-    ctx.lineWidth = 2.5;
-    const branchCount = 14;
-    for (let i = 0; i < branchCount; i++) {
-      const offsetX = (i - branchCount/2) * 8.5;
-      const startX = wx + offsetX;
-      const startY = trunkY - 65;
-      const ctrlX = startX + 20;
-      const ctrlY = startY + 40;
-      const endX = startX + 50;
-      const endY = startY + 30 + Math.abs(i - branchCount/2) * 3.5;
-      
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
-      ctx.stroke();
-      
-      // Leaf clusters at branch ends
-      ctx.fillStyle = '#4a9c4a';
-      for (let l = 0; l < 3; l++) {
-        const lx = endX + (Math.random() - 0.5) * 8;
-        const ly = endY + (Math.random() - 0.5) * 8;
-        ctx.beginPath();
-        ctx.ellipse(lx, ly, 5, 4, Math.random() * Math.PI, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-  });
 
-  // Ornamental flowering shrubs/bushes (pink and purple hydrangeas)
-  const bushPositions = [0.06, 0.18, 0.35, 0.48, 0.64, 0.8, 0.94];
-  bushPositions.forEach((pos, idx) => {
-    const bx = BASE_W * pos;
-    const by = waterY - 8;
-    
-    // Bush body (dark green)
-    ctx.fillStyle = '#2d6b3d';
-    ctx.beginPath();
-    ctx.ellipse(bx, by - 18, 28, 22, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Hydrangea flower clusters
-    const flowerCount = 16;
-    const colors = ['#e856cc', '#d85ec8', '#ff85d0', '#ff66cc', '#cc44dd', '#dd55ee'];
-    
-    for (let f = 0; f < flowerCount; f++) {
-      const angle = (f / flowerCount) * Math.PI * 2 + time * 0.1;
-      const dist = 18 + Math.sin(time * 0.05 + f) * 2;
-      const px = bx + Math.cos(angle) * dist;
-      const py = by - 18 + Math.sin(angle) * dist;
-      
-      ctx.fillStyle = colors[f % colors.length];
-      
-      // Flower petals (cluster of small circles)
-      for (let petal = 0; petal < 5; petal++) {
-        const petalAngle = (petal / 5) * Math.PI * 2;
-        const petX = px + Math.cos(petalAngle) * 3.5;
-        const petY = py + Math.sin(petalAngle) * 3.5;
-        ctx.beginPath();
-        ctx.arc(petX, petY, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-  });
 
-  // Lily pads with elegant flowers
-  const lilyCount = 40;
-  for (let i = 0; i < lilyCount; i++) {
-    const lx = (i * 32.5 + 13) % BASE_W;
-    const ly = waterY + 35 + (i * 19 % (waterH - 80));
-    const size = 9 + (i % 6);
-    
-    // Lily pad - darker green with dimension
-    ctx.fillStyle = '#4a9c5a';
-    ctx.beginPath();
-    ctx.ellipse(lx, ly, size, size * 0.65, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Highlight on lily pad
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.beginPath();
-    ctx.ellipse(lx - 2, ly - 2, size * 0.4, size * 0.3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Slit
-    ctx.strokeStyle = '#2a7c3a';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(lx, ly - size * 0.35);
-    ctx.lineTo(lx, ly + size * 0.35);
-    ctx.stroke();
-    
-    // Small lotus flowers on lily pads
-    if (i % 2 === 0) {
-      ctx.fillStyle = i % 4 === 0 ? '#ff99dd' : '#ffaaee';
-      for (let petal = 0; petal < 5; petal++) {
-        const angle = (petal / 5) * Math.PI * 2;
-        const petX = lx + Math.cos(angle) * 4;
-        const petY = ly - size - 3 + Math.sin(angle) * 4;
-        ctx.beginPath();
-        ctx.ellipse(petX, petY, 1.8, 2.5, angle, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // Flower center
-      ctx.fillStyle = '#ffdd99';
-      ctx.beginPath();
-      ctx.arc(lx, ly - size - 3, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
 
-  // Floating flower petals (animated)
-  ctx.fillStyle = 'rgba(255, 150, 200, 0.6)';
-  for (let i = 0; i < 8; i++) {
-    const x = (BASE_W * (0.1 + i * 0.1) + time * 15) % BASE_W;
-    const y = waterY + 20 + Math.sin(time * 0.05 + i) * 30;
-    ctx.beginPath();
-    ctx.arc(x, y, 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
 
-  // Fallen leaves on water (various autumn colors)
-  const leafCount = 25;
-  for (let i = 0; i < leafCount; i++) {
-    const lx = (i * 43 + 7 + time * 5) % BASE_W;
-    const ly = waterY + 60 + (i * 27 % (waterH - 100));
-    const size = 3.5 + (i % 5);
-    const leafColors = ['#d4a017', '#c1441e', '#e0b030', '#c87533', '#cc5c1a'];
-    ctx.fillStyle = leafColors[i % leafColors.length];
-    ctx.beginPath();
-    ctx.ellipse(lx, ly, size, size * 0.6, (time * 0.08 + i) * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-  }
 
-  // Banks and shores (lush green with depth)
-  ctx.fillStyle = '#3d7a4d';
-  // Left bank
-  ctx.beginPath();
-  ctx.moveTo(0, BASE_H);
-  ctx.lineTo(0, waterY - 15);
-  ctx.quadraticCurveTo(70, waterY - 55, 130, waterY - 5);
-  ctx.lineTo(130, BASE_H);
-  ctx.fill();
-  
-  // Right bank
-  ctx.beginPath();
-  ctx.moveTo(BASE_W, BASE_H);
-  ctx.lineTo(BASE_W, waterY - 25);
-  ctx.quadraticCurveTo(BASE_W - 90, waterY - 65, BASE_W - 170, waterY - 8);
-  ctx.lineTo(BASE_W - 170, BASE_H);
-  ctx.fill();
 
-  // Foreground - massive flower garden (left & right edges)
-  const foregroundFlowers = [
-    { x: 12, y: BASE_H - 20, color: '#ff77cc', count: 25 },
-    { x: 28, y: BASE_H - 18, color: '#ff99dd', count: 25 },
-    { x: 42, y: BASE_H - 22, color: '#dd44bb', count: 25 },
-    { x: BASE_W - 15, y: BASE_H - 20, color: '#ff77cc', count: 25 },
-    { x: BASE_W - 30, y: BASE_H - 18, color: '#ff99dd', count: 25 },
-  ];
 
-  foregroundFlowers.forEach(flower => {
-    for (let i = 0; i < flower.count; i++) {
-      const angle = (i / flower.count) * Math.PI * 2;
-      const dist = 8 + Math.sin(time * 0.06 + i) * 3;
-      const fx = flower.x + Math.cos(angle) * dist;
-      const fy = flower.y + Math.sin(angle) * dist;
-      
-      ctx.fillStyle = flower.color;
-      for (let petal = 0; petal < 5; petal++) {
-        const petalAngle = (petal / 5) * Math.PI * 2;
-        const petX = fx + Math.cos(petalAngle) * 2.5;
-        const petY = fy + Math.sin(petalAngle) * 2.5;
-        ctx.beginPath();
-        ctx.arc(petX, petY, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // Yellow center
-      ctx.fillStyle = '#ffee88';
-      ctx.beginPath();
-      ctx.arc(fx, fy, 1.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  });
+
+
+
+
+
+
+
 
   // Soft vignette overlay (darker edges)
   const vignetteGrad = ctx.createRadialGradient(BASE_W/2, BASE_H/2, 150, BASE_W/2, BASE_H/2, 400);
