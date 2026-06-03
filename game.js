@@ -661,87 +661,27 @@ function drawNatureBackground() {
 // ZIGZAG POND BACKGROUND
 // ═══════════════════════════════════════════════════════
 function drawZigzagPondBackground() {
-  const time = natureTime;
-  const skyHeight = BASE_H * 0.3;
-  const waterY = skyHeight;
-  const waterH = BASE_H - waterY;
-
-  // Sky background - use wallpaper if loaded, otherwise gradient
-  if (zigzagWallpaper.complete && zigzagWallpaper.naturalWidth > 0) {
-    // Draw wallpaper covering entire canvas (cover scaling)
-    const imgRatio = zigzagWallpaper.width / zigzagWallpaper.height;
-    const canvasRatio = BASE_W / BASE_H;
-    let drawW, drawH, drawX, drawY;
-    if (imgRatio > canvasRatio) {
-      drawH = BASE_H;
-      drawW = BASE_H * imgRatio;
-      drawX = (BASE_W - drawW) / 2;
-      drawY = 0;
-    } else {
-      drawW = BASE_W;
-      drawH = BASE_W / imgRatio;
-      drawX = 0;
-      drawY = (BASE_H - drawH) / 2;
-    }
-    ctx.drawImage(zigzagWallpaper, drawX, drawY, drawW, drawH);
+  // Draw ONLY wallpaper - NO nature elements
+  if (!zigzagWallpaper.complete || zigzagWallpaper.naturalWidth === 0) {
+    ctx.fillStyle = '#7ec88f';
+    ctx.fillRect(0, 0, BASE_W, BASE_H);
+    return;
+  }
+  const imgRatio = zigzagWallpaper.width / zigzagWallpaper.height;
+  const canvasRatio = BASE_W / BASE_H;
+  let drawW, drawH, drawX, drawY;
+  if (imgRatio > canvasRatio) {
+    drawH = BASE_H;
+    drawW = BASE_H * imgRatio;
+    drawX = (BASE_W - drawW) / 2;
+    drawY = 0;
   } else {
-    // Fallback: sky gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, skyHeight);
-    skyGrad.addColorStop(0, '#e8f0f8');
-    skyGrad.addColorStop(0.5, '#d4e8f0');
-    skyGrad.addColorStop(1, '#c8dfe8');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, BASE_W, skyHeight);
+    drawW = BASE_W;
+    drawH = BASE_W / imgRatio;
+    drawX = 0;
+    drawY = (BASE_H - drawH) / 2;
   }
-
-  // Water area - draw gradient
-  const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
-  waterGrad.addColorStop(0, '#52a876');
-  waterGrad.addColorStop(0.4, '#4a9f6f');
-  waterGrad.addColorStop(1, '#3a8f5f');
-  ctx.fillStyle = waterGrad;
-  ctx.fillRect(0, waterY, BASE_W, waterH);
-
-  // Animated water ripples with more detail
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-  ctx.lineWidth = 1.2;
-  for (let i = 0; i < 25; i++) {
-    const y = waterY + 15 + i * 22;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    for (let x = 0; x <= BASE_W; x += 6) {
-      const waveY = y + Math.sin(x * 0.018 + time * 0.6) * 2.5 + Math.sin(x * 0.008) * 1.5;
-      ctx.lineTo(x, waveY);
-    }
-    ctx.stroke();
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // Soft vignette overlay (darker edges)
-  const vignetteGrad = ctx.createRadialGradient(BASE_W/2, BASE_H/2, 150, BASE_W/2, BASE_H/2, 400);
-  vignetteGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  vignetteGrad.addColorStop(1, 'rgba(0,0,0,0.15)');
-  ctx.fillStyle = vignetteGrad;
-  ctx.fillRect(0, 0, BASE_W, BASE_H);
-
-  // Soft light overlay
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  ctx.fillRect(0, 0, BASE_W, BASE_H);
+  ctx.drawImage(zigzagWallpaper, drawX, drawY, drawW, drawH);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2093,3 +2033,4 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════
 document.getElementById('lobbyHighScore').textContent = '🏆 Best Score: ' + highScore;
 document.getElementById('gameContainer').classList.add('hidden');
+
