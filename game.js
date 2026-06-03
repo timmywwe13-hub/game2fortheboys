@@ -26,6 +26,12 @@ const comboDisplayEl = document.getElementById('comboDisplay');
 const comboCountEl = document.getElementById('comboCount');
 const comboMultEl = document.getElementById('comboMult');
 
+// ── Zigzag Map Wallpaper ──
+let zigzagWallpaper = new Image();
+zigzagWallpaper.src = 'newwallpaper.png';
+zigzagWallpaper.onload = () => console.log('Zigzag wallpaper loaded successfully');
+zigzagWallpaper.onerror = () => console.log('Zigzag wallpaper failed to load, using fallback');
+
 // ── Game State ──
 let gameRunning = false;
 let gold = 100;
@@ -736,15 +742,37 @@ function drawNatureBackground() {
 // ═══════════════════════════════════════════════════════
 function drawZigzagPondBackground() {
   const time = natureTime;
-
-  // Sky - soft gradient with morning light
   const skyHeight = BASE_H * 0.3;
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, skyHeight);
-  skyGrad.addColorStop(0, '#e8f0f8');
-  skyGrad.addColorStop(0.5, '#d4e8f0');
-  skyGrad.addColorStop(1, '#c8dfe8');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, BASE_W, skyHeight);
+  const waterY = skyHeight;
+  const waterH = BASE_H - waterY;
+
+  // Sky background - use wallpaper if loaded, otherwise gradient
+  if (zigzagWallpaper.complete && zigzagWallpaper.naturalWidth > 0) {
+    // Draw wallpaper covering entire canvas (cover scaling)
+    const imgRatio = zigzagWallpaper.width / zigzagWallpaper.height;
+    const canvasRatio = BASE_W / BASE_H;
+    let drawW, drawH, drawX, drawY;
+    if (imgRatio > canvasRatio) {
+      drawH = BASE_H;
+      drawW = BASE_H * imgRatio;
+      drawX = (BASE_W - drawW) / 2;
+      drawY = 0;
+    } else {
+      drawW = BASE_W;
+      drawH = BASE_W / imgRatio;
+      drawX = 0;
+      drawY = (BASE_H - drawH) / 2;
+    }
+    ctx.drawImage(zigzagWallpaper, drawX, drawY, drawW, drawH);
+  } else {
+    // Fallback: sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, skyHeight);
+    skyGrad.addColorStop(0, '#e8f0f8');
+    skyGrad.addColorStop(0.5, '#d4e8f0');
+    skyGrad.addColorStop(1, '#c8dfe8');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, BASE_W, skyHeight);
+  }
 
   // Far background - very distant trees
   ctx.fillStyle = '#1a4d2e';
@@ -754,15 +782,15 @@ function drawZigzagPondBackground() {
     ctx.fill();
   }
 
-  // Water - vibrant emerald green
-  const waterY = skyHeight;
-  const waterH = BASE_H - waterY;
-  const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
-  waterGrad.addColorStop(0, '#52a876');
-  waterGrad.addColorStop(0.4, '#4a9f6f');
-  waterGrad.addColorStop(1, '#3a8f5f');
-  ctx.fillStyle = waterGrad;
-  ctx.fillRect(0, waterY, BASE_W, waterH);
+  // Water area - only draw gradient if wallpaper not loaded (wallpaper covers whole canvas)
+  if (!zigzagWallpaper.complete || zigzagWallpaper.naturalWidth === 0) {
+    const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
+    waterGrad.addColorStop(0, '#52a876');
+    waterGrad.addColorStop(0.4, '#4a9f6f');
+    waterGrad.addColorStop(1, '#3a8f5f');
+    ctx.fillStyle = waterGrad;
+    ctx.fillRect(0, waterY, BASE_W, waterH);
+  }
 
   // Animated water ripples with more detail
   ctx.strokeStyle = 'rgba(255,255,255,0.2)';
@@ -2252,6 +2280,7 @@ function gameLoop() {
 // ═══════════════════════════════════════════════════════
 function getCanvasCoords(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
+  console.log('getBoundingClientRect:', rect);
   return {
     x: (clientX - rect.left) * (canvas.width / rect.width),
     y: (clientY - rect.top) * (canvas.height / rect.height)
@@ -2307,8 +2336,10 @@ function handleCanvasInteraction(x, y) {
 
 // ── Mouse Events ──
 canvas.addEventListener('click', e => {
+  console.log('Canvas click detected', { clientX: e.clientX, clientY: e.clientY });
   initAudio();
   const { x, y } = getCanvasCoords(e.clientX, e.clientY);
+  console.log('Canvas coords:', { x, y });
   handleCanvasInteraction(x, y);
 });
 
