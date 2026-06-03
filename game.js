@@ -496,6 +496,9 @@ function drawBackroomsBackground() {
   ctx.fillRect(0, 0, BASE_W, BASE_H);
 }
 function drawNatureBackground() {
+  // Skip nature drawing for zigzag map
+  if (currentMap === 'zigzag') return;
+  
   natureTime += 0.02;
 
   // Base grass colour
