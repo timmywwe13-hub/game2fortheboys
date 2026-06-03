@@ -28,9 +28,25 @@ const comboMultEl = document.getElementById('comboMult');
 
 // ── Zigzag Map Wallpaper ──
 let zigzagWallpaper = new Image();
-zigzagWallpaper.src = 'newwallpaper.png';
-zigzagWallpaper.onload = () => console.log('Zigzag wallpaper loaded successfully');
-zigzagWallpaper.onerror = () => console.log('Zigzag wallpaper failed to load, using fallback');
+// Try multiple wallpaper options
+const wallpaperOptions = ['wallpaper_for_zigzag.jpg', 'newwallpaper.png'];
+let wallpaperLoaded = false;
+function loadZigzagWallpaper(index = 0) {
+  if (index >= wallpaperOptions.length) {
+    console.log('No wallpaper available, using gradient fallback');
+    return;
+  }
+  zigzagWallpaper.src = wallpaperOptions[index];
+}
+zigzagWallpaper.onload = () => {
+  wallpaperLoaded = true;
+  console.log('Zigzag wallpaper loaded successfully');
+};
+zigzagWallpaper.onerror = () => {
+  console.log('Failed to load wallpaper, trying next option...');
+  loadZigzagWallpaper(wallpaperOptions.indexOf(zigzagWallpaper.src) + 1);
+};
+loadZigzagWallpaper();
 
 // ── Game State ──
 let gameRunning = false;
@@ -144,7 +160,7 @@ const MAP_PATHS = {
     { x: 700, y: 300 }
   ],
   zigzag: [
-    { x: 0, y: 50 }, { x: 600, y: 50 }, { x: 600, y: 150 },
+    { x: 50, y: 50 }, { x: 600, y: 50 }, { x: 600, y: 150 },
     { x: 100, y: 150 }, { x: 100, y: 250 }, { x: 600, y: 250 },
     { x: 600, y: 350 }, { x: 100, y: 350 }, { x: 100, y: 450 },
     { x: 600, y: 450 }, { x: 600, y: 550 }, { x: 700, y: 550 }
@@ -664,7 +680,7 @@ function drawZigzagPondBackground() {
   const waterH = BASE_H - waterY;
 
   // Sky background - use wallpaper if loaded, otherwise gradient
-  if (zigzagWallpaper.complete && zigzagWallpaper.naturalWidth > 0) {
+  if (wallpaperLoaded && zigzagWallpaper.complete && zigzagWallpaper.naturalWidth > 0) {
     // Draw wallpaper covering entire canvas (cover scaling)
     const imgRatio = zigzagWallpaper.width / zigzagWallpaper.height;
     const canvasRatio = BASE_W / BASE_H;
@@ -691,17 +707,13 @@ function drawZigzagPondBackground() {
     ctx.fillRect(0, 0, BASE_W, skyHeight);
   }
 
-
-
-  // Water area - only draw gradient if wallpaper not loaded (wallpaper covers whole canvas)
-  if (!zigzagWallpaper.complete || zigzagWallpaper.naturalWidth === 0) {
-    const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
-    waterGrad.addColorStop(0, '#52a876');
-    waterGrad.addColorStop(0.4, '#4a9f6f');
-    waterGrad.addColorStop(1, '#3a8f5f');
-    ctx.fillStyle = waterGrad;
-    ctx.fillRect(0, waterY, BASE_W, waterH);
-  }
+  // Water area - draw gradient
+  const waterGrad = ctx.createLinearGradient(0, waterY, 0, BASE_H);
+  waterGrad.addColorStop(0, '#52a876');
+  waterGrad.addColorStop(0.4, '#4a9f6f');
+  waterGrad.addColorStop(1, '#3a8f5f');
+  ctx.fillStyle = waterGrad;
+  ctx.fillRect(0, waterY, BASE_W, waterH);
 
   // Animated water ripples with more detail
   ctx.strokeStyle = 'rgba(255,255,255,0.2)';
