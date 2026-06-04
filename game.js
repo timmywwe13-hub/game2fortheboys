@@ -173,10 +173,8 @@ const MAP_PATHS = {
     { x: 700, y: 50 }
   ],
   city: [
-    { x: 0, y: 180 }, { x: 180, y: 180 }, { x: 180, y: 60 },
-    { x: 480, y: 60 }, { x: 480, y: 260 }, { x: 220, y: 260 },
-    { x: 220, y: 420 }, { x: 620, y: 420 }, { x: 620, y: 540 },
-    { x: 700, y: 540 }
+    [ { x: 0, y: 180 }, { x: 180, y: 180 }, { x: 180, y: 60 }, { x: 480, y: 60 }, { x: 480, y: 260 }, { x: 220, y: 260 }, { x: 220, y: 420 }, { x: 620, y: 420 }, { x: 620, y: 540 }, { x: 700, y: 540 } ],
+    [ { x: 0, y: 240 }, { x: 480, y: 240 }, { x: 480, y: 420 }, { x: 620, y: 420 }, { x: 620, y: 540 }, { x: 700, y: 540 } ]
   ],
   backrooms: [ { x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 50 }, { x: 500, y: 50 }, { x: 500, y: 200 }, { x: 350, y: 200 }, { x: 350, y: 300 }, { x: 550, y: 300 }, { x: 550, y: 450 }, { x: 350, y: 450 }, { x: 350, y: 550 }, { x: 150, y: 550 }, { x: 150, y: 400 }, { x: 50, y: 400 }, { x: 50, y: 300 }, { x: 200, y: 300 }, { x: 200, y: 200 }, { x: 50, y: 200 }, { x: 50, y: 500 }, { x: 250, y: 500 }, { x: 250, y: 400 }, { x: 450, y: 400 }, { x: 450, y: 550 }, { x: 600, y: 550 }, { x: 600, y: 350 }, { x: 650, y: 350 }, { x: 650, y: 150 }, { x: 700, y: 150 } ] };
 let PATH = MAP_PATHS.classic;
@@ -844,12 +842,15 @@ function drawMiniMap() {
   ctx.stroke();
 
   // Path
+  const paths = Array.isArray(PATH[0]) ? PATH : [PATH];
   ctx.strokeStyle = 'rgba(255,255,255,0.3)';
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(mmX + PATH[0].x * sx, mmY + PATH[0].y * sy);
-  for (let i = 1; i < PATH.length; i++) ctx.lineTo(mmX + PATH[i].x * sx, mmY + PATH[i].y * sy);
-  ctx.stroke();
+  paths.forEach(p => {
+    ctx.beginPath();
+    ctx.moveTo(mmX + p[0].x * sx, mmY + p[0].y * sy);
+    for (let i = 1; i < p.length; i++) ctx.lineTo(mmX + p[i].x * sx, mmY + p[i].y * sy);
+    ctx.stroke();
+  });
 
   // Towers
   towers.forEach(t => {
@@ -880,6 +881,8 @@ function drawPath() {
     pathOutline = null;
   }
 
+  const pathsToDraw = Array.isArray(PATH[0]) ? PATH : [PATH];
+
   // Add grounding shadow for depth
   ctx.shadowColor = 'rgba(0,0,0,0.4)';
   ctx.shadowBlur = 8;
@@ -892,12 +895,14 @@ function drawPath() {
     ctx.lineWidth = PATH_WIDTH + 6;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(PATH[0].x, PATH[0].y);
-    for (let i = 1; i < PATH.length; i++) {
-      ctx.lineTo(PATH[i].x, PATH[i].y);
-    }
-    ctx.stroke();
+    pathsToDraw.forEach(p => {
+      ctx.beginPath();
+      ctx.moveTo(p[0].x, p[0].y);
+      for (let i = 1; i < p.length; i++) {
+        ctx.lineTo(p[i].x, p[i].y);
+      }
+      ctx.stroke();
+    });
   }
 
   // Reset shadow for clean main path
@@ -910,12 +915,14 @@ function drawPath() {
   ctx.lineWidth = PATH_WIDTH;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(PATH[0].x, PATH[0].y);
-  for (let i = 1; i < PATH.length; i++) {
-    ctx.lineTo(PATH[i].x, PATH[i].y);
-  }
-  ctx.stroke();
+  pathsToDraw.forEach(p => {
+    ctx.beginPath();
+    ctx.moveTo(p[0].x, p[0].y);
+    for (let i = 1; i < p.length; i++) {
+      ctx.lineTo(p[i].x, p[i].y);
+    }
+    ctx.stroke();
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1306,13 +1313,16 @@ function spawnEnemy(type) {
     hpMult *= Math.pow(1.15, endlessWave);
     speedMult = Math.pow(1.05, endlessWave);
   }
+  const paths = Array.isArray(PATH[0]) ? PATH : [PATH];
+  const chosenPath = paths[Math.floor(Math.random() * paths.length)];
+
   enemies.push({
-    x: PATH[0].x, y: PATH[0].y,
+    x: chosenPath[0].x, y: chosenPath[0].y,
     hp: template.hp * hpMult, maxHp: template.hp * hpMult,
     speed: template.speed * speedMult,
     reward: template.reward,
     color: template.color, size: template.size,
-    pathIndex: 0, slowTimer: 0, slowAmount: 1,
+    path: chosenPath, pathIndex: 0, slowTimer: 0, slowAmount: 1,
     poisonTimer: 0, poisonDmg: 0,
     type: type, frozen: false, frozenTimer: 0,
     flying: template.flying || false
@@ -1351,8 +1361,11 @@ function placeTower(x, y) {
 }
 
 function canPlaceTower(x, y) {
-  for (let i = 0; i < PATH.length - 1; i++) {
-    if (distToSegment(x, y, PATH[i], PATH[i + 1]) < 40) return false;
+  const pathsToCheck = Array.isArray(PATH[0]) ? PATH : [PATH];
+  for (let p of pathsToCheck) {
+    for (let i = 0; i < p.length - 1; i++) {
+      if (distToSegment(x, y, p[i], p[i + 1]) < 40) return false;
+    }
   }
   for (const tower of towers) {
     if (Math.hypot(x - tower.x, y - tower.y) < 50) return false;
@@ -1438,7 +1451,8 @@ function updateEnemies() {
       enemy.y += (dy / dist) * speed;
       continue;
     }
-    const target = PATH[enemy.pathIndex + 1];
+    const currentPath = enemy.path || PATH;
+    const target = currentPath[enemy.pathIndex + 1];
     if (!target) { enemies.splice(i, 1); lives--; updateUI(); if (lives <= 0) endGame(false); continue; }
     const dx = target.x - enemy.x; const dy = target.y - enemy.y;
     const dist = Math.hypot(dx, dy);
