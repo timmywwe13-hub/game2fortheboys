@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 
-// TOWER DEFENSE — game.js v3.5
+// TOWER DEFENSE — game.js v3.6
 // ═══════════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -193,7 +193,6 @@ const DIFFICULTY_SETTINGS = {
 // ── Tower Definitions ──
 const TOWER_TYPES = {
   arrow: {
-    cost: 50, damage: 15, range: 120, fireRate: 20, color: '#8b4513', name: 'Arrow Tower', projectileColor: '#ffd700', projectileSpeed: 8, icon: '🏹', desc: 'Fast attack, low damage', upgradeCost: 40, upgradeDmg: 10, upgradeRange: 15, sfx: sfxShoot, unlockLevel: 1,
     cost: 50, damage: 15, range: 120, fireRate: 20, color: '#8b4513', name: 'Arrow Tower', projectileColor: '#ffd700', projectileSpeed: 8, icon: '🏹', desc: 'Fast attack, low damage', upgradeCost: 40, upgradeDmg: 10, upgradeRange: 15, sfx: sfxShoot, unlockLevel: 1, antiAir: true,
     upgradePaths: [
       { id: 'sharpshot', name: 'Sharpshot', desc: '+12 damage, +5 range', effect: { damage: 12, range: 5, fireRate: 0 } },
@@ -1374,6 +1373,8 @@ function canPlaceTower(x, y) {
   if (currentMap === 'city') {
     return CITY_PLACEMENT_ZONES.some(zone => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h);
   }
+  // On the city map, we no longer restrict placement to strict zones.
+  // As long as it isn't on the road (checked above) or another tower, placement is allowed.
   return true;
 }
 
@@ -2315,7 +2316,6 @@ document.addEventListener('keydown', e => {
   if (e.key === '3') selectTower('ice');
   if (e.key === '4') selectTower('lightning');
   if (e.key === '5') selectTower('sniper');
-  if (e.key === '6') selectTower('poison'); if (e.key === '7') selectTower('laser'); if (e.key === '8') selectTower('buff'); if (e.key === 's' || e.key === 'S') { if (shopOpen) closeShop(); else if (!waveInProgress) openShop(); }
   if (e.key === '6') selectTower('poison');
   if (e.key === '7') selectTower('laser');
   if (e.key === '8') selectTower('buff');
