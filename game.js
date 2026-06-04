@@ -194,6 +194,7 @@ const DIFFICULTY_SETTINGS = {
 const TOWER_TYPES = {
   arrow: {
     cost: 50, damage: 15, range: 120, fireRate: 20, color: '#8b4513', name: 'Arrow Tower', projectileColor: '#ffd700', projectileSpeed: 8, icon: '🏹', desc: 'Fast attack, low damage', upgradeCost: 40, upgradeDmg: 10, upgradeRange: 15, sfx: sfxShoot, unlockLevel: 1,
+    cost: 50, damage: 15, range: 120, fireRate: 20, color: '#8b4513', name: 'Arrow Tower', projectileColor: '#ffd700', projectileSpeed: 8, icon: '🏹', desc: 'Fast attack, low damage', upgradeCost: 40, upgradeDmg: 10, upgradeRange: 15, sfx: sfxShoot, unlockLevel: 1, antiAir: true,
     upgradePaths: [
       { id: 'sharpshot', name: 'Sharpshot', desc: '+12 damage, +5 range', effect: { damage: 12, range: 5, fireRate: 0 } },
       { id: 'hawkeye', name: 'Hawkeye', desc: '+25 range, -6 fire rate', effect: { damage: 5, range: 25, fireRate: 6 } },
@@ -225,7 +226,7 @@ const TOWER_TYPES = {
     ]
   },
   sniper: {
-    cost: 125, damage: 80, range: 250, fireRate: 90, color: '#2e8b57', name: 'Sniper Tower', projectileColor: '#ff00ff', projectileSpeed: 15, icon: '🎯', desc: 'Very long range, massive damage', upgradeCost: 90, upgradeDmg: 40, upgradeRange: 20, sfx: sfxSniper, unlockLevel: 3,
+    cost: 125, damage: 80, range: 250, fireRate: 90, color: '#2e8b57', name: 'Sniper Tower', projectileColor: '#ff00ff', projectileSpeed: 15, icon: '🎯', desc: 'Very long range, massive damage', upgradeCost: 90, upgradeDmg: 40, upgradeRange: 20, sfx: sfxSniper, unlockLevel: 3, antiAir: true,
     upgradePaths: [
       { id: 'precision', name: 'Precision', desc: '+30 damage, +10 range', effect: { damage: 30, range: 10, fireRate: 0 } },
       { id: 'lethal', name: 'Lethal Shot', desc: '-15 fire rate, +20 damage', effect: { damage: 20, range: 0, fireRate: -15 } },
@@ -241,7 +242,7 @@ const TOWER_TYPES = {
     ]
   },
   laser: {
-    cost: 200, damage: 2, range: 180, fireRate: 5, color: '#ff0000', name: 'Laser Tower', projectileColor: '#ff0000', projectileSpeed: 0, icon: '🔴', desc: 'Piercing beam, hits all in line', upgradeCost: 150, upgradeDmg: 1, upgradeRange: 15, isLaser: true, sfx: sfxLaser, unlockLevel: 5,
+    cost: 200, damage: 2, range: 180, fireRate: 5, color: '#ff0000', name: 'Laser Tower', projectileColor: '#ff0000', projectileSpeed: 0, icon: '🔴', desc: 'Piercing beam, hits all in line', upgradeCost: 150, upgradeDmg: 1, upgradeRange: 15, isLaser: true, sfx: sfxLaser, unlockLevel: 5, antiAir: true,
     upgradePaths: [
       { id: 'focus', name: 'Focused Beam', desc: '+20 damage, +10 range', effect: { damage: 20, range: 10, fireRate: 0 } },
       { id: 'overcharge', name: 'Overcharge', desc: '-10 fire rate, +10 damage', effect: { damage: 10, fireRate: -10 } },
@@ -1490,12 +1491,12 @@ function updateTowers() {
     if (type.isLaser) {
       tower.cooldown = Math.max(0, tower.cooldown - 1);
       if (tower.cooldown <= 0) {
-        let target = null; let minDist = effectiveRange;
-        enemies.forEach(enemy => {
-          if (enemy.flying && !type.antiAir) return;
+        let target = null;
+        for (let enemy of enemies) {
+          if (enemy.flying && !type.antiAir) continue;
           const dist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
-          if (dist < minDist) { minDist = dist; target = enemy; }
-        });
+          if (dist < effectiveRange) { target = enemy; break; }
+        }
         if (target) {
           tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
           const dx = target.x - tower.x, dy = target.y - tower.y;
@@ -1526,12 +1527,12 @@ function updateTowers() {
     // Normal tower logic
     tower.cooldown = Math.max(0, tower.cooldown - 1);
     if (tower.cooldown === 0) {
-      let target = null; let minDist = effectiveRange;
-      enemies.forEach(enemy => {
-        if (enemy.flying && !type.antiAir) return;
+      let target = null;
+      for (let enemy of enemies) {
+        if (enemy.flying && !type.antiAir) continue;
         const dist = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
-        if (dist < minDist) { minDist = dist; target = enemy; }
-      });
+        if (dist < effectiveRange) { target = enemy; break; }
+      }
       if (target) {
         tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
         fireProjectile(tower, target, dmgBoost);
@@ -1554,6 +1555,7 @@ function updateProjectiles() {
     }
     for (let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
+      if (enemy.flying && !proj.antiAir) continue;
       if (Math.hypot(enemy.x - proj.x, enemy.y - proj.y) < enemy.size + 5) {
         let finalDmg = proj.damage;
         let isCrit = Math.random() < CRIT_CHANCE;
@@ -1568,6 +1570,7 @@ function updateProjectiles() {
         }
         if (proj.splash) {
           enemies.forEach(e => {
+            if (e.flying && !proj.antiAir) return;
             if (e !== enemy && Math.hypot(e.x - proj.x, e.y - proj.y) < proj.splash) {
               e.hp -= proj.damage * 0.5;
             }
@@ -1758,7 +1761,8 @@ function fireProjectile(tower, target, dmgBoost) {
     color: tower.projectileColor,
     splash: tower.splash, slow: tower.slow,
     chain: tower.chain, poison: tower.poison,
-    sourceTower: tower
+    sourceTower: tower,
+    antiAir: TOWER_TYPES[tower.type].antiAir
   });
 }
 
@@ -2312,6 +2316,15 @@ document.addEventListener('keydown', e => {
   if (e.key === '4') selectTower('lightning');
   if (e.key === '5') selectTower('sniper');
   if (e.key === '6') selectTower('poison'); if (e.key === '7') selectTower('laser'); if (e.key === '8') selectTower('buff'); if (e.key === 's' || e.key === 'S') { if (shopOpen) closeShop(); else if (!waveInProgress) openShop(); }
+  if (e.key === '6') selectTower('poison');
+  if (e.key === '7') selectTower('laser');
+  if (e.key === '8') selectTower('buff');
+
+  if (e.key === 's' || e.key === 'S') {
+    if (shopOpen) closeShop();
+    else if (!waveInProgress) openShop();
+  }
+
   if (e.key === ' ') { e.preventDefault(); startWave(); }
   if (e.key === 'Escape') { selectedTowerType = null; hideTowerInfo(); updateUI(); }
 });
@@ -2321,3 +2334,10 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════
 document.getElementById('lobbyHighScore').textContent = '🏆 Best Score: ' + highScore;
 document.getElementById('gameContainer').classList.add('hidden');
+
+// ── Path Selection Buttons ──
+document.querySelectorAll('.path-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    chooseTowerPath(btn.dataset.pathId, btn.dataset.towerType);
+  });
+});
