@@ -261,11 +261,11 @@ const TOWER_TYPES = {
 // ── Enemy Types ──
 const ENEMY_TYPES = {
   basic:  { hp: 80,  speed: 1.5, reward: 10,  color: '#ff6b6b', size: 15, name: 'Grunt' },
-  fast:   { hp: 50,  speed: 3,   reward: 15,  color: '#ffff00', size: 12, name: 'Scout' },
+  fast:   { hp: 50,  speed: 2.2, reward: 15,  color: '#ffff00', size: 12, name: 'Scout' },
   tank:   { hp: 300, speed: 0.8, reward: 30,  color: '#8b0000', size: 22, name: 'Brute' },
   healer: { hp: 120, speed: 1.2, reward: 25,  color: '#00ff88', size: 16, name: 'Medic' },
   boss:   { hp: 1000,speed: 0.5, reward: 100, color: '#4a0080', size: 30, name: 'Overlord' },
-  flying: { hp: 60, speed: 2.5, reward: 20, color: '#ffa500', size: 14, name: 'Drone', flying: true },
+  flying: { hp: 60, speed: 2.0, reward: 20, color: '#ffa500', size: 14, name: 'Drone', flying: true },
   finalBoss: { hp: 10000, speed: 0.4, reward: 1000, color: '#ff0000', size: 50, name: 'Final Boss' }
 };
 
