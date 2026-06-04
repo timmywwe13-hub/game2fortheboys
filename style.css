@@ -140,6 +140,20 @@ canvas {
   cursor: not-allowed;
 }
 
+.tower-btn.locked {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.tower-btn.too-expensive:not(.locked) {
+  opacity: 0.8;
+}
+
+.tower-btn.too-expensive:not(.locked) .tower-cost {
+  color: #ff4444;
+  text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+}
+
 .tower-btn .tower-name { font-weight: bold; font-size: 14px; }
 .tower-btn .tower-cost { color: #ffd700; font-size: 12px; }
 .tower-btn .tower-desc { font-size: 11px; color: #aaa; margin-top: 4px; }
@@ -164,6 +178,67 @@ canvas {
 }
 
 #towerInfo.active { display: block; }
+
+.xp-box {
+  padding-bottom: 10px;
+}
+
+.xp-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+#xpBarFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00ff88, #00bcd4);
+}
+
+.xp-text {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #aaa;
+  text-align: center;
+}
+
+.path-choices {
+  margin-top: 10px;
+}
+
+.path-choices-title {
+  color: #00ffff;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.path-btn {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 6px;
+  border: 2px solid #444;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2c2c4c 0%, #1f1f36 100%);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.path-btn:hover:not(:disabled) {
+  border-color: #00ff88;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+}
+
+.path-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 #towerInfo .info-title {
   color: #00ffff;
@@ -243,6 +318,33 @@ canvas {
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 10px;
+}
+
+.unlock-progress {
+  margin-top: 14px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 12px;
+}
+
+.unlock-title {
+  color: #00ff88;
+  font-size: 13px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+#unlockList {
+  list-style: none;
+  padding-left: 0;
+  color: #ccc;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#unlockList li {
+  margin-bottom: 4px;
 }
 #shopBtn:hover {
   transform: scale(1.05);

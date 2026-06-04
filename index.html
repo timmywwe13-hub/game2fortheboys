@@ -28,6 +28,7 @@
         <button class="map-btn" data-map="zigzag" onclick="setMap('zigzag')">⚡ Zigzag</button>
         <button class="map-btn" data-map="spiral" onclick="setMap('spiral')">🌀 Spiral</button>
         <button class="map-btn" data-map="backrooms" onclick="setMap('backrooms')">🏢 Backrooms</button>
+        <button class="map-btn" data-map="city" onclick="setMap('city')">🏙️ City</button>
       </div>
 
       <div class="lobby-features">
@@ -55,8 +56,28 @@
       <button class="changelog-close" onclick="toggleChangelog()">✕</button>
       <div class="changelog-entries">
         <div class="changelog-entry">
-          <span class="cl-version">v3.3</span>
+          <span class="cl-version">v3.5</span>
           <span class="cl-date">— Latest</span>
+          <ul>
+            <li>💬 Unlock Feedback — clicking a locked tower now displays exactly what level you need</li>
+            <li>⭐ Visual XP Sync — real-time progress bar and level-up notifications with sound effects</li>
+            <li>🪙 Gold Feedback — added floating text warnings when trying to buy towers without enough gold</li>
+            <li>⌨️ Shortcut Refactor — improved keyboard response for all 8 tower types</li>
+          </ul>
+        </div>
+        <div class="changelog-entry">
+          <span class="cl-version">v3.4</span>
+          <span class="cl-date">— Previous</span>
+          <ul>
+            <li>📈 XP System — earn experience by defeating enemies and clearing waves to level up</li>
+            <li>🔓 Tower Unlocks — advanced towers now require specific levels (Laser at Lv.5, Buff at Lv.6)</li>
+            <li>📊 Stats UI — added Level and XP tracking modules to the game sidebar</li>
+            <li>🛠️ GitHub Workflow — added Pull Request templates and enhanced project documentation</li>
+          </ul>
+        </div>
+        <div class="changelog-entry">
+          <span class="cl-version">v3.3</span>
+          <span class="cl-date">— Previous</span>
           <ul>
             <li>🐛 Bug Fixes — fixed zigzag map background rendering on GitHub Pages</li>
             <li>📚 GitHub Templates — added contributing guide &amp; issue templates</li>
@@ -169,6 +190,16 @@
         <div class="stat-label">💀 Kills</div>
         <div class="stat-value kills" id="killsDisplay">0</div>
       </div>
+      <div class="stat-box">
+        <div class="stat-label">🏅 Level</div>
+        <div class="stat-value level" id="levelDisplay">1</div>
+      </div>
+      <div class="stat-box xp-box">
+        <div class="stat-label">⭐ XP</div>
+        <div class="stat-value xp" id="xpDisplay">0</div>
+        <div class="xp-bar"><div id="xpBarFill"></div></div>
+        <div class="xp-text" id="xpText">1 → 2</div>
+      </div>
       <div class="stat-box" id="dayNightBox">
         <div class="stat-label">Cycle</div>
         <div class="stat-value daynight" id="dayNightIndicator">☀ Day</div>
@@ -228,6 +259,13 @@
         <div class="info-stat" id="infoDamage">Damage: 0</div>
         <div class="info-stat" id="infoRange">Range: 0</div>
         <div class="info-stat" id="infoKills">Kills: 0</div>
+        <div class="info-stat" id="infoPath" style="display:none;">Path: <span id="infoPathName"></span></div>
+        <div id="pathChoices" class="path-choices hidden">
+          <div class="path-choices-title">Choose Upgrade Path</div>
+          <button class="path-btn" id="pathBtn0"></button>
+          <button class="path-btn" id="pathBtn1"></button>
+          <button class="path-btn" id="pathBtn2"></button>
+        </div>
         <button class="info-btn" id="upgradeBtn">⬆ Upgrade</button>
         <button class="info-btn" id="sellBtn">💰 Sell</button>
       </div>
@@ -247,6 +285,18 @@
 
       <button id="shopBtn" onclick="if(shopOpen)closeShop();else if(!waveInProgress)openShop();">🛒 Shop</button>
       <button id="startWaveBtn" onclick="startWave()">⚔️ Start Wave</button>
+
+      <div id="unlockProgress" class="unlock-progress">
+        <div class="unlock-title">🔓 Tower Unlocks</div>
+        <ul id="unlockList">
+          <li>Arrow, Cannon, Ice - Level 1</li>
+          <li>Lightning - Level 2</li>
+          <li>Sniper - Level 3</li>
+          <li>Poison - Level 4</li>
+          <li>Laser - Level 5</li>
+          <li>Buff - Level 6</li>
+        </ul>
+      </div>
 
       <!-- Speed Controls -->
       <div id="speedControls">

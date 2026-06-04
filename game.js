@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 
-// TOWER DEFENSE — game.js v3.3
+// TOWER DEFENSE — game.js v3.5
 // ═══════════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -60,6 +60,22 @@ let enemiesSpawned = 0;
 let totalWaveEnemies = 0;
 let shopUpgrades = { dmgBonus: 0, fireRateBonus: 0, startGoldBonus: 0, extraLives: 0 };
 const SHOP_ITEMS = [ { id: 'dmgBonus', key: 'dmgBonus', name: 'Damage Boost', desc: '+10% tower damage', baseCost: 50, costInc: 20, icon: '⚔️', maxLevel: 5 }, { id: 'fireRateBonus', key: 'fireRateBonus', name: 'Fire Rate Boost', desc: '+10% faster fire rate', baseCost: 60, costInc: 25, icon: '⚡', maxLevel: 5 }, { id: 'startGoldBonus', key: 'startGoldBonus', name: 'Starting Gold', desc: '+25 starting gold', baseCost: 40, costInc: 15, icon: '💰', maxLevel: 5 }, { id: 'extraLives', key: 'extraLives', name: 'Extra Lives', desc: '+2 extra lives', baseCost: 80, costInc: 30, icon: '❤️', maxLevel: 5 } ];
+
+let playerXP = 0;
+let playerLevel = 1;
+let xpToNextLevel = 100;
+const XP_PER_KILL = 12;
+const XP_PER_WAVE = 30;
+const MAX_TOWERS = 35;
+const CITY_PLACEMENT_ZONES = [
+  { x: 10, y: 10, w: 160, h: 120 },
+  { x: 530, y: 10, w: 160, h: 120 },
+  { x: 10, y: 430, w: 160, h: 150 },
+  { x: 530, y: 430, w: 160, h: 150 },
+  { x: 10, y: 220, w: 120, h: 140 },
+  { x: 560, y: 220, w: 120, h: 140 },
+  { x: 250, y: 340, w: 160, h: 120 }
+];
 
 // ── Screen Shake ──
 let shakeAmount = 0;
@@ -156,7 +172,14 @@ const MAP_PATHS = {
     { x: 300, y: 400 }, { x: 300, y: 300 }, { x: 300, y: 50 },
     { x: 700, y: 50 }
   ],
-  backrooms: [ { x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 50 }, { x: 500, y: 50 }, { x: 500, y: 200 }, { x: 350, y: 200 }, { x: 350, y: 300 }, { x: 550, y: 300 }, { x: 550, y: 450 }, { x: 350, y: 450 }, { x: 350, y: 550 }, { x: 150, y: 550 }, { x: 150, y: 400 }, { x: 50, y: 400 }, { x: 50, y: 300 }, { x: 200, y: 300 }, { x: 200, y: 200 }, { x: 50, y: 200 }, { x: 50, y: 500 }, { x: 250, y: 500 }, { x: 250, y: 400 }, { x: 450, y: 400 }, { x: 450, y: 550 }, { x: 600, y: 550 }, { x: 600, y: 350 }, { x: 650, y: 350 }, { x: 650, y: 150 }, { x: 700, y: 150 } ] }; let PATH = MAP_PATHS.classic;
+  city: [
+    { x: 0, y: 180 }, { x: 180, y: 180 }, { x: 180, y: 60 },
+    { x: 480, y: 60 }, { x: 480, y: 260 }, { x: 220, y: 260 },
+    { x: 220, y: 420 }, { x: 620, y: 420 }, { x: 620, y: 540 },
+    { x: 700, y: 540 }
+  ],
+  backrooms: [ { x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 50 }, { x: 500, y: 50 }, { x: 500, y: 200 }, { x: 350, y: 200 }, { x: 350, y: 300 }, { x: 550, y: 300 }, { x: 550, y: 450 }, { x: 350, y: 450 }, { x: 350, y: 550 }, { x: 150, y: 550 }, { x: 150, y: 400 }, { x: 50, y: 400 }, { x: 50, y: 300 }, { x: 200, y: 300 }, { x: 200, y: 200 }, { x: 50, y: 200 }, { x: 50, y: 500 }, { x: 250, y: 500 }, { x: 250, y: 400 }, { x: 450, y: 400 }, { x: 450, y: 550 }, { x: 600, y: 550 }, { x: 600, y: 350 }, { x: 650, y: 350 }, { x: 650, y: 150 }, { x: 700, y: 150 } ] };
+let PATH = MAP_PATHS.classic;
 
 // Path rendering
 const PATH_COLOR = '#ffcc00';
@@ -171,27 +194,70 @@ const DIFFICULTY_SETTINGS = {
 
 // ── Tower Definitions ──
 const TOWER_TYPES = {
-  arrow:     { cost: 50,  damage: 15, range: 120, fireRate: 20, color: '#8b4513', name: 'Arrow Tower',     projectileColor: '#ffd700', projectileSpeed: 8,  icon: '🏹', desc: 'Fast attack, low damage',           upgradeCost: 40,  upgradeDmg: 10, upgradeRange: 15, sfx: sfxShoot },
-  cannon:    { cost: 100, damage: 50, range: 100, fireRate: 60, color: '#444',    name: 'Cannon Tower',    projectileColor: '#ff4500', projectileSpeed: 5,  splash: 40, icon: '💣', desc: 'Slow attack, high damage + splash', upgradeCost: 75,  upgradeDmg: 25, upgradeRange: 10, sfx: sfxCannon },
-  ice:       { cost: 75,  damage: 20, range: 110, fireRate: 35, color: '#00bfff', name: 'Ice Tower',       projectileColor: '#00ffff', projectileSpeed: 6,  slow: 0.5, icon: '❄️', desc: 'Slows enemies, medium damage',      upgradeCost: 55,  upgradeDmg: 8,  upgradeRange: 12, sfx: sfxIce },
-  lightning: { cost: 150, damage: 30, range: 150, fireRate: 50, color: '#9932cc', name: 'Lightning Tower', projectileColor: '#ffff00', projectileSpeed: 20, chain: 3,  icon: '⚡', desc: 'Chain lightning to 3 enemies',      upgradeCost: 100, upgradeDmg: 15, upgradeRange: 15, sfx: sfxLightning },
-  sniper:    { cost: 125, damage: 80, range: 250, fireRate: 90, color: '#2e8b57', name: 'Sniper Tower',    projectileColor: '#ff00ff', projectileSpeed: 15, icon: '🎯', desc: 'Very long range, massive damage',   upgradeCost: 90,  upgradeDmg: 40, upgradeRange: 20, sfx: sfxSniper },
-  poison:    { cost: 90,  damage: 8,  range: 100, fireRate: 25, color: '#32cd32', name: 'Poison Tower',    projectileColor: '#7cfc00', projectileSpeed: 7,  poison: 3, icon: '☠️', desc: 'Poisons enemies — damage over time', upgradeCost: 60, upgradeDmg: 4,  upgradeRange: 10, sfx: sfxPoison },
-    laser: {
-        cost: 200, damage: 2, range: 180, fireRate: 5, color: '#ff0000',
-        name: 'Laser Tower', projectileColor: '#ff0000', projectileSpeed: 0,
-        icon: '🔴', desc: 'Piercing beam, hits all in line',
-        upgradeCost: 150, upgradeDmg: 1, upgradeRange: 15,
-        isLaser: true, sfx: sfxLaser
-    },
-    buff: {
-        cost: 120, damage: 0, range: 0, fireRate: 0, color: '#ffd700',
-        name: 'Buff Tower', projectileColor: '#ffd700', projectileSpeed: 0,
-        icon: '✨', desc: 'Boosts nearby towers damage and speed',
-        upgradeCost: 80, upgradeDmg: 0, upgradeRange: 20,
-        isBuff: true, buffRadius: 120, buffDmgMult: 1.25, buffFireRateMult: 1.2,
-        sfx: sfxBuff
-    }
+  arrow: {
+    cost: 50, damage: 15, range: 120, fireRate: 20, color: '#8b4513', name: 'Arrow Tower', projectileColor: '#ffd700', projectileSpeed: 8, icon: '🏹', desc: 'Fast attack, low damage', upgradeCost: 40, upgradeDmg: 10, upgradeRange: 15, sfx: sfxShoot, unlockLevel: 1,
+    upgradePaths: [
+      { id: 'sharpshot', name: 'Sharpshot', desc: '+12 damage, +5 range', effect: { damage: 12, range: 5, fireRate: 0 } },
+      { id: 'hawkeye', name: 'Hawkeye', desc: '+25 range, -6 fire rate', effect: { damage: 5, range: 25, fireRate: 6 } },
+      { id: 'stormshot', name: 'Stormshot', desc: 'Fires faster, +3 damage', effect: { damage: 3, range: 0, fireRate: -8 } }
+    ]
+  },
+  cannon: {
+    cost: 100, damage: 50, range: 100, fireRate: 60, color: '#444', name: 'Cannon Tower', projectileColor: '#ff4500', projectileSpeed: 5, splash: 40, icon: '💣', desc: 'Slow attack, high damage + splash', upgradeCost: 75, upgradeDmg: 25, upgradeRange: 10, sfx: sfxCannon, unlockLevel: 1,
+    upgradePaths: [
+      { id: 'blast', name: 'Blast Charge', desc: '+20 splash, +10 damage', effect: { damage: 10, range: 0, fireRate: 0, splash: 20 } },
+      { id: 'longshot', name: 'Longshot', desc: '+30 range, +5 damage', effect: { damage: 5, range: 30, fireRate: 0 } },
+      { id: 'barrage', name: 'Barrage', desc: '-10 fire rate, +10 splash', effect: { damage: 0, range: 0, fireRate: -10, splash: 10 } }
+    ]
+  },
+  ice: {
+    cost: 75, damage: 20, range: 110, fireRate: 35, color: '#00bfff', name: 'Ice Tower', projectileColor: '#00ffff', projectileSpeed: 6, slow: 0.5, icon: '❄️', desc: 'Slows enemies, medium damage', upgradeCost: 55, upgradeDmg: 8, upgradeRange: 12, sfx: sfxIce, unlockLevel: 1,
+    upgradePaths: [
+      { id: 'deepfreeze', name: 'Deep Freeze', desc: '+0.2 slow, +5 damage', effect: { damage: 5, range: 0, fireRate: 0, slow: 0.2 } },
+      { id: 'arctic', name: 'Arctic Burst', desc: '+20 range, area slow', effect: { damage: 0, range: 20, fireRate: 0, splash: 25 } },
+      { id: 'winter', name: 'Winter Barrage', desc: '-8 fire rate, +3 damage', effect: { damage: 3, range: 0, fireRate: -8 } }
+    ]
+  },
+  lightning: {
+    cost: 150, damage: 30, range: 150, fireRate: 50, color: '#9932cc', name: 'Lightning Tower', projectileColor: '#ffff00', projectileSpeed: 20, chain: 3, icon: '⚡', desc: 'Chain lightning to 3 enemies', upgradeCost: 100, upgradeDmg: 15, upgradeRange: 15, sfx: sfxLightning, unlockLevel: 2,
+    upgradePaths: [
+      { id: 'chain', name: 'Chain Master', desc: '+1 chain target, +8 damage', effect: { damage: 8, range: 0, fireRate: 0, chain: 1 } },
+      { id: 'overload', name: 'Overload', desc: '+20 range, +10 damage', effect: { damage: 10, range: 20, fireRate: 0 } },
+      { id: 'stun', name: 'Stun Shock', desc: '+0.5 stun chance, +5 damage', effect: { damage: 5, range: 0, fireRate: 0, stun: 0.5 } }
+    ]
+  },
+  sniper: {
+    cost: 125, damage: 80, range: 250, fireRate: 90, color: '#2e8b57', name: 'Sniper Tower', projectileColor: '#ff00ff', projectileSpeed: 15, icon: '🎯', desc: 'Very long range, massive damage', upgradeCost: 90, upgradeDmg: 40, upgradeRange: 20, sfx: sfxSniper, unlockLevel: 3,
+    upgradePaths: [
+      { id: 'precision', name: 'Precision', desc: '+30 damage, +10 range', effect: { damage: 30, range: 10, fireRate: 0 } },
+      { id: 'lethal', name: 'Lethal Shot', desc: '-15 fire rate, +20 damage', effect: { damage: 20, range: 0, fireRate: -15 } },
+      { id: 'pierce', name: 'Piercing Bolt', desc: '+15 range, +1 chain', effect: { damage: 10, range: 15, fireRate: 0, chain: 1 } }
+    ]
+  },
+  poison: {
+    cost: 90, damage: 8, range: 100, fireRate: 25, color: '#32cd32', name: 'Poison Tower', projectileColor: '#7cfc00', projectileSpeed: 7, poison: 3, icon: '☠️', desc: 'Poisons enemies — damage over time', upgradeCost: 60, upgradeDmg: 4, upgradeRange: 10, sfx: sfxPoison, unlockLevel: 4,
+    upgradePaths: [
+      { id: 'virulent', name: 'Virulent', desc: '+4 poison damage, +5 range', effect: { poison: 4, range: 5, fireRate: 0 } },
+      { id: 'cloud', name: 'Toxic Cloud', desc: '+20 splash, +3 damage', effect: { damage: 3, splash: 20, fireRate: 0 } },
+      { id: 'leech', name: 'Life Leech', desc: '+10 damage, +5 range', effect: { damage: 10, range: 5, fireRate: 0 } }
+    ]
+  },
+  laser: {
+    cost: 200, damage: 2, range: 180, fireRate: 5, color: '#ff0000', name: 'Laser Tower', projectileColor: '#ff0000', projectileSpeed: 0, icon: '🔴', desc: 'Piercing beam, hits all in line', upgradeCost: 150, upgradeDmg: 1, upgradeRange: 15, isLaser: true, sfx: sfxLaser, unlockLevel: 5,
+    upgradePaths: [
+      { id: 'focus', name: 'Focused Beam', desc: '+20 damage, +10 range', effect: { damage: 20, range: 10, fireRate: 0 } },
+      { id: 'overcharge', name: 'Overcharge', desc: '-10 fire rate, +10 damage', effect: { damage: 10, fireRate: -10 } },
+      { id: 'lash', name: 'Lashing Beam', desc: '+2 chain/pierce, +5 range', effect: { damage: 5, range: 5, fireRate: 0, chain: 1 } }
+    ]
+  },
+  buff: {
+    cost: 120, damage: 0, range: 0, fireRate: 0, color: '#ffd700', name: 'Buff Tower', projectileColor: '#ffd700', projectileSpeed: 0, icon: '✨', desc: 'Boosts nearby towers damage and speed', upgradeCost: 80, upgradeDmg: 0, upgradeRange: 20, isBuff: true, buffRadius: 120, buffDmgMult: 1.25, buffFireRateMult: 1.2, sfx: sfxBuff, unlockLevel: 6,
+    upgradePaths: [
+      { id: 'aura', name: 'Power Aura', desc: '+0.15 dmg boost, +0.1 speed', effect: { buffDmgMult: 0.15, buffFireRateMult: 0.1 } },
+      { id: 'radius', name: 'Wide Reach', desc: '+30 buff radius, +5 range', effect: { buffRadius: 30, range: 5 } },
+      { id: 'focus', name: 'Focused Support', desc: '+0.25 dmg boost, +0.15 speed', effect: { buffDmgMult: 0.25, buffFireRateMult: 0.15 } }
+    ]
+  }
 };
 
 // ── Enemy Types ──
@@ -684,6 +750,83 @@ function drawZigzagPondBackground() {
   ctx.drawImage(zigzagWallpaper, drawX, drawY, drawW, drawH);
 }
 
+function drawCityBackground() {
+  // Base urban ground
+  ctx.fillStyle = '#1f2430';
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+  // Sidewalks
+  ctx.fillStyle = '#777';
+  ctx.fillRect(0, 0, BASE_W, 60);
+  ctx.fillRect(0, 120, BASE_W, 40);
+  ctx.fillRect(0, 220, BASE_W, 40);
+  ctx.fillRect(0, 340, BASE_W, 40);
+  ctx.fillRect(0, 520, BASE_W, 80);
+  // Roads and crosswalks
+  ctx.fillStyle = '#2b2f38';
+  ctx.fillRect(0, 180, BASE_W, 80);
+  ctx.fillRect(180, 60, 300, 20);
+  ctx.fillRect(480, 60, 20, 200);
+  ctx.fillRect(220, 260, 400, 20);
+  ctx.fillRect(220, 420, 400, 20);
+  ctx.fillRect(620, 420, 80, 120);
+  ctx.fillStyle = '#555';
+  for (let x = 10; x < BASE_W; x += 30) {
+    ctx.fillRect(x, 218, 20, 4);
+    ctx.fillRect(x, 342, 20, 4);
+  }
+  ctx.fillStyle = '#fff';
+  for (let y = 188; y < 258; y += 20) {
+    ctx.fillRect(66, y, 30, 8);
+    ctx.fillRect(146, y, 30, 8);
+  }
+  ctx.fillRect(188, 90, 18, 6);
+  ctx.fillRect(188, 130, 18, 6);
+  ctx.fillRect(238, 256, 8, 22);
+  ctx.fillRect(298, 256, 8, 22);
+  ctx.fillRect(358, 256, 8, 22);
+  ctx.fillRect(418, 256, 8, 22);
+  ctx.fillRect(478, 256, 8, 22);
+  // Buildings
+  const buildings = [
+    { x: 10, y: 10, w: 160, h: 110, c: '#3b475f' },
+    { x: 530, y: 10, w: 160, h: 110, c: '#3f3f5a' },
+    { x: 10, y: 430, w: 160, h: 150, c: '#4a3f55' },
+    { x: 530, y: 430, w: 160, h: 150, c: '#3c4c5c' },
+    { x: 250, y: 340, w: 160, h: 120, c: '#3a4a5a' },
+    { x: 560, y: 220, w: 120, h: 140, c: '#42435a' }
+  ];
+  buildings.forEach(b => {
+    ctx.fillStyle = b.c;
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    for (let wy = b.y + 12; wy < b.y + b.h - 10; wy += 18) {
+      for (let wx = b.x + 10; wx < b.x + b.w - 10; wx += 18) {
+        ctx.fillRect(wx, wy, 10, 12);
+      }
+    }
+  });
+  // City decoration: streetlights
+  for (const p of [{x: 170, y: 170},{x: 360,y:170},{x: 550,y:170},{x: 230,y:250},{x: 410,y:250},{x: 590,y:250},{x: 230,y:420},{x: 410,y:420},{x: 590,y:420}]) {
+    ctx.fillStyle = '#555';
+    ctx.fillRect(p.x, p.y - 30, 4, 30);
+    ctx.beginPath();
+    ctx.arc(p.x + 2, p.y - 30, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#f2e27f';
+    ctx.fill();
+  }
+  // Designated tower zones
+  CITY_PLACEMENT_ZONES.forEach(zone => {
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.08)';
+    ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
+    ctx.strokeStyle = 'rgba(0, 255, 136, 0.18)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+  });
+}
+
 // ═══════════════════════════════════════════════════════
 // MINI-MAP
 // ═══════════════════════════════════════════════════════
@@ -822,6 +965,9 @@ function init() {
   currentWave = 0;
   waveInProgress = false;
   isNight = false;
+  playerXP = 0;
+  playerLevel = 1;
+  xpToNextLevel = 100;
   nightTransition = 0;
   endlessMode = false;
   laserBeams = [];
@@ -855,6 +1001,18 @@ function init() {
   gameLoop();
 }
 
+function gainXP(amount) {
+  playerXP += amount;
+  while (playerXP >= xpToNextLevel) {
+    playerXP -= xpToNextLevel;
+    playerLevel++;
+    xpToNextLevel = Math.floor(xpToNextLevel * 1.5);
+    addFloatingText(350, 240, "⭐ LEVEL UP! Level " + playerLevel, "#ffff00");
+    sfxPowerUp();
+  }
+  updateUI();
+}
+
 // ═══════════════════════════════════════════════════════
 // UI
 // ═══════════════════════════════════════════════════════
@@ -864,6 +1022,14 @@ function updateUI() {
   waveDisplay.textContent = currentWave + (endlessMode ? ' ∞' : ' / ' + maxWaves);
   scoreDisplay.textContent = score;
   killsDisplay.textContent = killCount;
+  const levelEl = document.getElementById('levelDisplay');
+  if (levelEl) levelEl.textContent = playerLevel;
+  const xpEl = document.getElementById('xpDisplay');
+  if (xpEl) xpEl.textContent = playerXP + ' / ' + xpToNextLevel;
+  const xpBar = document.getElementById('xpBarFill');
+  if (xpBar) xpBar.style.width = Math.min(100, (playerXP / xpToNextLevel) * 100) + '%';
+  const xpText = document.getElementById('xpText');
+  if (xpText) xpText.textContent = playerLevel + ' → ' + (playerLevel + 1);
   const dnEl = document.getElementById('dayNightIndicator');
   if (dnEl) dnEl.textContent = isNight ? '🌙 Night' : '☀ Day';
   startWaveBtn.disabled = waveInProgress;
@@ -871,10 +1037,29 @@ function updateUI() {
   towerBtns.forEach(btn => {
     const type = btn.dataset.tower;
     if (TOWER_TYPES[type]) {
-      btn.disabled = gold < TOWER_TYPES[type].cost;
+      const unlocked = isTowerUnlocked(type);
+      // Only truly disable if it's unlocked but too expensive.
+      // If it's locked, keep it enabled so the click handler can show the requirement message.
+      btn.disabled = unlocked && gold < TOWER_TYPES[type].cost;
+      // Keep the button technically enabled so clicking it can trigger feedback 
+      // messages (like "Unlocks at Lv. X" or "Need more gold").
+      btn.disabled = false;
       btn.classList.toggle('selected', selectedTowerType === type);
+      btn.classList.toggle('too-expensive', unlocked && gold < TOWER_TYPES[type].cost);
+      const descEl = btn.querySelector('.tower-desc');
+      if (descEl) {
+        descEl.textContent = unlocked ? TOWER_TYPES[type].desc : 'Unlocks at Level ' + TOWER_TYPES[type].unlockLevel;
+      }
+      btn.classList.toggle('locked', !unlocked);
     }
   });
+  const unlockList = document.getElementById('unlockList');
+  if (unlockList) {
+    unlockList.innerHTML = Object.values(TOWER_TYPES)
+      .sort((a, b) => a.unlockLevel - b.unlockLevel)
+      .map(type => `<li${playerLevel >= type.unlockLevel ? '' : ' style="opacity:0.65;"'}>${type.icon} ${type.name} - Level ${type.unlockLevel}</li>`)
+      .join('');
+  }
   if (waveInProgress && totalWaveEnemies > 0) {
     const killed = totalWaveEnemies - enemies.length;
     const pct = Math.min(100, (killed / totalWaveEnemies) * 100);
@@ -885,13 +1070,25 @@ function updateUI() {
   if (selectedTower) updateTowerInfoPanel(selectedTower);
 }
 
+function isTowerUnlocked(type) {
+  return playerLevel >= (TOWER_TYPES[type]?.unlockLevel || 1);
+}
+
 function selectTower(type) {
-  if (gold >= TOWER_TYPES[type].cost) {
-    selectedTowerType = selectedTowerType === type ? null : type;
-    selectedTower = null;
-    hideTowerInfo();
-    updateUI();
+  const towerData = TOWER_TYPES[type];
+  if (!isTowerUnlocked(type)) {
+    addFloatingText(350, 280, towerData.name + ' unlocks at Level ' + towerData.unlockLevel, '#ff6b6b');
+    return;
   }
+  if (gold < towerData.cost) {
+    addFloatingText(350, 280, 'Need ' + (towerData.cost - gold) + ' more gold!', '#ffcc00');
+    return;
+  }
+
+  selectedTowerType = selectedTowerType === type ? null : type;
+  selectedTower = null;
+  hideTowerInfo();
+  updateUI();
 }
 
 function showTowerInfo(tower) {
@@ -913,11 +1110,67 @@ function updateTowerInfoPanel(tower) {
   document.getElementById('infoDamage').textContent = 'Damage: ' + tower.damage;
   document.getElementById('infoRange').textContent = 'Range: ' + tower.range;
   document.getElementById('infoKills').textContent = 'Kills: ' + tower.kills;
+  const infoPath = document.getElementById('infoPath');
+  const infoPathName = document.getElementById('infoPathName');
+  const pathChoices = document.getElementById('pathChoices');
+  const pathButtons = [document.getElementById('pathBtn0'), document.getElementById('pathBtn1'), document.getElementById('pathBtn2')];
+  if (tower.path) {
+    infoPath.style.display = 'block';
+    infoPathName.textContent = tower.pathName || tower.path;
+  } else {
+    infoPath.style.display = 'none';
+    infoPathName.textContent = '';
+  }
   const upgCost = type.upgradeCost * tower.level;
   upgradeBtn.textContent = '⬆ Upgrade (💰' + upgCost + ')';
-  upgradeBtn.disabled = gold < upgCost || tower.level >= 5;
+  upgradeBtn.disabled = gold < upgCost || tower.level >= 5 || (tower.level >= 3 && !tower.path);
   const sellValue = Math.floor(type.cost * 0.6 * tower.level);
   sellBtn.textContent = '💰 Sell (💰' + sellValue + ')';
+  if (tower.level >= 3 && !tower.path && type.upgradePaths) {
+    pathChoices.classList.remove('hidden');
+    pathButtons.forEach((button, index) => {
+      const pathData = type.upgradePaths[index];
+      if (pathData) {
+        button.style.display = 'block';
+        button.disabled = false;
+        button.textContent = pathData.name + ': ' + pathData.desc;
+        button.dataset.pathId = pathData.id;
+        button.dataset.towerType = tower.type;
+      } else {
+        button.style.display = 'none';
+      }
+    });
+  } else {
+    pathChoices.classList.add('hidden');
+  }
+}
+
+function chooseTowerPath(pathId, towerType) {
+  if (!selectedTower || selectedTower.type !== towerType) return;
+  const type = TOWER_TYPES[towerType];
+  const pathData = type.upgradePaths?.find(p => p.id === pathId);
+  if (!pathData) return;
+  selectedTower.path = pathId;
+  selectedTower.pathName = pathData.name;
+  selectedTower.pathDesc = pathData.desc;
+  applyTowerPathEffects(selectedTower, pathData.effect);
+  addFloatingText(selectedTower.x, selectedTower.y - 28, 'Path: ' + pathData.name, '#00ff88');
+  updateTowerInfoPanel(selectedTower);
+  updateUI();
+}
+
+function applyTowerPathEffects(tower, effect) {
+  if (!effect) return;
+  if (effect.damage) tower.damage += effect.damage;
+  if (effect.range) tower.range += effect.range;
+  if (effect.fireRate) tower.fireRate = Math.max(3, tower.fireRate + effect.fireRate);
+  if (effect.splash) tower.splash = (tower.splash || 0) + effect.splash;
+  if (effect.chain) tower.chain = (tower.chain || 0) + effect.chain;
+  if (effect.slow) tower.slow = Math.min(1, (tower.slow || 0) + effect.slow);
+  if (effect.poison) tower.poison = (tower.poison || 0) + effect.poison;
+  if (effect.buffRadius) tower.buffRadius = (tower.buffRadius || TOWER_TYPES[tower.type].buffRadius || 0) + effect.buffRadius;
+  if (effect.buffDmgMult) tower.buffDmgMult = (tower.buffDmgMult || TOWER_TYPES[tower.type].buffDmgMult || 1) + effect.buffDmgMult;
+  if (effect.buffFireRateMult) tower.buffFireRateMult = (tower.buffFireRateMult || TOWER_TYPES[tower.type].buffFireRateMult || 1) + effect.buffFireRateMult;
 }
 
 function upgradeTower() {
@@ -925,11 +1178,16 @@ function upgradeTower() {
   const type = TOWER_TYPES[selectedTower.type];
   const cost = type.upgradeCost * selectedTower.level;
   if (gold < cost) return;
+  if (selectedTower.level >= 3 && !selectedTower.path) return;
   gold -= cost;
   selectedTower.level++;
   selectedTower.damage += type.upgradeDmg;
   selectedTower.range += type.upgradeRange;
   selectedTower.fireRate = Math.max(5, selectedTower.fireRate - 2);
+  if (selectedTower.path) {
+    const pathData = type.upgradePaths?.find(p => p.id === selectedTower.path);
+    applyTowerPathEffects(selectedTower, pathData?.effect);
+  }
   createParticles(selectedTower.x, selectedTower.y, '#00ff88', 15);
   addFloatingText(selectedTower.x, selectedTower.y - 30, '⬆ Lv.' + selectedTower.level, '#00ff88');
   sfxPlace();
@@ -1072,12 +1330,7 @@ function placeTower(x, y) {
   }
   const type = TOWER_TYPES[selectedTowerType];
   if (gold < type.cost) return;
-  for (let i = 0; i < PATH.length - 1; i++) {
-    if (distToSegment(x, y, PATH[i], PATH[i + 1]) < 40) return;
-  }
-  for (const tower of towers) {
-    if (Math.hypot(x - tower.x, y - tower.y) < 50) return;
-  }
+  if (!canPlaceTower(x, y)) return;
   gold -= type.cost;
   towers.push({
     x, y, type: selectedTowerType,
@@ -1086,12 +1339,28 @@ function placeTower(x, y) {
     projectileSpeed: type.projectileSpeed,
     splash: type.splash || 0, slow: type.slow || 0,
     chain: type.chain || 0, poison: type.poison || 0,
-    cooldown: 0, angle: 0, level: 1, kills: 0
+    cooldown: 0, angle: 0, level: 1, kills: 0,
+    buffRadius: type.buffRadius || 0,
+    buffDmgMult: type.buffDmgMult || 1,
+    buffFireRateMult: type.buffFireRateMult || 1
   });
   createParticles(x, y, type.color, 10);
   addFloatingText(x, y - 30, '-' + type.cost + '💰', '#ff6b6b');
   sfxPlace();
   updateUI();
+}
+
+function canPlaceTower(x, y) {
+  for (let i = 0; i < PATH.length - 1; i++) {
+    if (distToSegment(x, y, PATH[i], PATH[i + 1]) < 40) return false;
+  }
+  for (const tower of towers) {
+    if (Math.hypot(x - tower.x, y - tower.y) < 50) return false;
+  }
+  if (currentMap === 'city') {
+    return CITY_PLACEMENT_ZONES.some(zone => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h);
+  }
+  return true;
 }
 
 function distToSegment(px, py, v, w) {
@@ -1320,6 +1589,7 @@ function checkDeadEnemies() {
       let reward = enemy.reward;
       if (activePowerUp && activePowerUp.type === 'doubleGold') reward *= 2;
       gold += reward;
+      gainXP(XP_PER_KILL);
       killCount++;
       comboCount++;
       comboTimer = COMBO_TIMEOUT;
@@ -1437,6 +1707,7 @@ function checkWaveComplete() {
     const bonus = currentWave * 15;
     gold += bonus;
     score += bonus;
+    gainXP(XP_PER_WAVE);
     addFloatingText(350, 300, 'Wave ' + currentWave + ' Clear! +' + bonus + ' gold', '#00ff88');
     sfxWaveClear();
     updateUI();
@@ -1487,7 +1758,10 @@ function draw() {
     const sy = (Math.random() - 0.5) * shakeAmount * 2;
     ctx.translate(sx, sy);
   }
-  if (currentMap === 'backrooms') { drawBackroomsBackground(); } else if (currentMap === 'zigzag') { drawZigzagPondBackground(); } else { drawNatureBackground(); }
+  if (currentMap === 'backrooms') { drawBackroomsBackground(); }
+  else if (currentMap === 'zigzag') { drawZigzagPondBackground(); }
+  else if (currentMap === 'city') { drawCityBackground(); }
+  else { drawNatureBackground(); }
   drawPath();
   drawPowerUps();
   drawTowers();
@@ -2033,4 +2307,3 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════
 document.getElementById('lobbyHighScore').textContent = '🏆 Best Score: ' + highScore;
 document.getElementById('gameContainer').classList.add('hidden');
-

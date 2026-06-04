@@ -10,7 +10,7 @@ A browser-based Tower Defense game built with vanilla HTML, CSS, and JavaScript.
 
 ## 🎮 Features
 
-- **6 Tower Types** — Arrow, Cannon, Ice, Lightning, Sniper, and Poison towers, each with unique mechanics
+- **8 Tower Types** — Arrow, Cannon, Ice, Lightning, Sniper, Poison, Laser, and Buff towers, each with unique mechanics
 - **5 Enemy Types** — Grunts, Scouts, Brutes, Medics (healers), and Overlords (bosses)
 - **3 Maps** — Classic, Zigzag, and Spiral path layouts
 - **3 Difficulty Levels** — Easy, Normal, and Hard with scaled stats and scoring
@@ -30,7 +30,7 @@ A browser-based Tower Defense game built with vanilla HTML, CSS, and JavaScript.
 1. Open `index.html` in any modern web browser
 2. Choose your **difficulty** and **map** in the lobby
 3. Click **🎮 Start Game**
-4. Select a tower from the sidebar (or press keys **1–6**)
+4. Select a tower from the sidebar (or press keys **1–8**)
 5. Click on the map to place your tower
 6. Press **Space** or click **Start Wave** to send enemies
 7. Click placed towers to **upgrade** or **sell** them
@@ -47,6 +47,8 @@ A browser-based Tower Defense game built with vanilla HTML, CSS, and JavaScript.
 | `4` | Lightning Tower |
 | `5` | Sniper Tower |
 | `6` | Poison Tower |
+| `7` | Laser Tower |
+| `8` | Buff Tower |
 | `Space` | Start Wave / Toggle Auto-Wave |
 | `Esc` | Deselect |
 
@@ -60,6 +62,8 @@ A browser-based Tower Defense game built with vanilla HTML, CSS, and JavaScript.
 | ⚡ Lightning | 150💰 | Chain lightning hits up to 3 enemies |
 | 🎯 Sniper | 125💰 | Very long range, massive damage |
 | ☠️ Poison | 90💰 | Damage over time effect |
+| 🔴 Laser | 200💰 | Piercing beam hits all in a line |
+| ✨ Buff | 120💰 | Boosts nearby towers damage/speed |
 
 ## 👾 Enemy Guide
 
