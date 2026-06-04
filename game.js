@@ -1394,9 +1394,6 @@ function canPlaceTower(x, y) {
   for (const tower of towers) {
     if (Math.hypot(x - tower.x, y - tower.y) < 50) return false;
   }
-  if (currentMap === 'city') {
-    return CITY_PLACEMENT_ZONES.some(zone => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h);
-  }
   // On the city map, we no longer restrict placement to strict zones.
   // As long as it isn't on the road (checked above) or another tower, placement is allowed.
   return true;
@@ -1469,8 +1466,9 @@ function updateEnemies() {
     if (enemy.slowTimer > 0) { speed *= enemy.slowAmount; enemy.slowTimer--; }
     if (enemy.type === 'healer') { enemies.forEach(e => { if (e !== enemy && e.hp > 0 && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) { e.hp = Math.min(e.maxHp, e.hp + 0.3); } }); }
     // Flying enemies move in a straight line from start to end
+    const currentPath = enemy.path || (Array.isArray(PATH[0]) ? PATH[0] : PATH);
     if (enemy.flying) {
-      const endPt = PATH[PATH.length - 1];
+      const endPt = currentPath[currentPath.length - 1];
       const dx = endPt.x - enemy.x, dy = endPt.y - enemy.y;
       const dist = Math.hypot(dx, dy);
       if (dist < speed + 5) { enemies.splice(i, 1); lives--; updateUI(); if (lives <= 0) endGame(false); continue; }
@@ -1478,7 +1476,6 @@ function updateEnemies() {
       enemy.y += (dy / dist) * speed;
       continue;
     }
-    const currentPath = enemy.path || PATH;
     const target = currentPath[enemy.pathIndex + 1];
     if (!target) { enemies.splice(i, 1); lives--; updateUI(); if (lives <= 0) endGame(false); continue; }
     const dx = target.x - enemy.x; const dy = target.y - enemy.y;
@@ -1493,27 +1490,31 @@ function spawnSummonedUnit(tower) {
   let closestDist = Infinity;
   let spawnPos = { x: tower.x, y: tower.y };
   let pathIdx = 0;
+  let chosenPath = Array.isArray(PATH[0]) ? PATH[0] : PATH;
 
   const paths = Array.isArray(PATH[0]) ? PATH : [PATH];
-  const p = paths[0]; 
 
-  for (let i = 0; i < p.length - 1; i++) {
-    let dist = distToSegment(tower.x, tower.y, p[i], p[i + 1]);
-    if (dist < closestDist) {
-      closestDist = dist;
-      pathIdx = i;
-      const v = p[i], w = p[i+1];
-      const l2 = (w.x - v.x) ** 2 + (w.y - v.y) ** 2;
-      let t = Math.max(0, Math.min(1, ((tower.x - v.x) * (w.x - v.x) + (tower.y - v.y) * (w.y - v.y)) / l2));
-      spawnPos = { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+  paths.forEach(p => {
+    for (let i = 0; i < p.length - 1; i++) {
+      let dist = distToSegment(tower.x, tower.y, p[i], p[i + 1]);
+      if (dist < closestDist) {
+        closestDist = dist;
+        pathIdx = i;
+        chosenPath = p;
+        const v = p[i], w = p[i+1];
+        const l2 = (w.x - v.x) ** 2 + (w.y - v.y) ** 2;
+        let t = Math.max(0, Math.min(1, ((tower.x - v.x) * (w.x - v.x) + (tower.y - v.y) * (w.y - v.y)) / l2));
+        spawnPos = { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+      }
     }
-  }
+  });
 
   summonedUnits.push({
     x: spawnPos.x, y: spawnPos.y,
     hp: tower.unitHp || type.unitHp,
     maxHp: tower.unitHp || type.unitHp,
     owner: tower,
+    path: chosenPath,
     pathIndex: pathIdx,
     speed: 0.5,
     size: 15
@@ -1525,7 +1526,7 @@ function updateSummonedUnits() {
     const unit = summonedUnits[i];
     
     // Move slowly backwards along path to create a defensive line
-    const p = PATH;
+    const p = unit.path;
     const target = p[unit.pathIndex];
     if (target) {
       const dx = target.x - unit.x, dy = target.y - unit.y;
@@ -2119,10 +2120,14 @@ function drawTowers() {
     ctx.fillStyle = '#333';
     ctx.fillRect(0, -5, 25, 10);
     ctx.restore();
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(type.icon, tower.x, tower.y);
+    if (type.isSummoner && maidImg.complete && maidImg.naturalWidth !== 0) {
+        ctx.drawImage(maidImg, tower.x - 18, tower.y - 18, 36, 36);
+    } else {
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(type.icon, tower.x, tower.y);
+    }
   });
 }
 
