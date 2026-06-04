@@ -32,6 +32,14 @@ zigzagWallpaper.src = 'newwallpaper.png';
 zigzagWallpaper.onload = () => console.log('Zigzag wallpaper loaded successfully');
 zigzagWallpaper.onerror = () => console.log('Zigzag wallpaper failed to load, using fallback');
 
+// ── Summoner Images ──
+let maidImg = new Image();
+maidImg.src = 'maid.png';
+let blockheadImg = new Image();
+blockheadImg.src = 'blockhead.png';
+maidImg.onerror = () => console.log('Maid image failed to load');
+blockheadImg.onerror = () => console.log('Blockhead image failed to load');
+
 // ── Game State ──
 let gameRunning = false;
 let gold = 100;
@@ -52,6 +60,7 @@ let towers = [];
 let enemies = [];
 let projectiles = [];
 let particles = [];
+let summonedUnits = [];
 let floatingTexts = [];
 let animationId;
 let gameSpeed = 1;
@@ -255,18 +264,26 @@ const TOWER_TYPES = {
       { id: 'radius', name: 'Wide Reach', desc: '+30 buff radius, +5 range', effect: { buffRadius: 30, range: 5 } },
       { id: 'focus', name: 'Focused Support', desc: '+0.25 dmg boost, +0.15 speed', effect: { buffDmgMult: 0.25, buffFireRateMult: 0.15 } }
     ]
+  },
+  summon: {
+    cost: 180, damage: 15, range: 120, fireRate: 120, color: '#ff69b4', name: 'Summon Tower', projectileColor: '#ff69b4', projectileSpeed: 0, icon: '🧹', desc: 'Summons blockheads (50 HP) to block enemies', upgradeCost: 120, upgradeDmg: 5, upgradeRange: 15, sfx: sfxBuff, unlockLevel: 7,
+    isSummoner: true, maxUnits: 12, unitsPerSummon: 3, unitHp: 50,
+    upgradePaths: [
+        { id: 'horde', name: 'Horde', desc: '+4 max units, +1 per spawn', effect: { maxUnits: 4, unitsPerSummon: 1 } },
+        { id: 'tough', name: 'Tough heads', desc: '+30 unit HP', effect: { unitHp: 30 } }
+    ]
   }
 };
 
 // ── Enemy Types ──
 const ENEMY_TYPES = {
-  basic:  { hp: 80,  speed: 1.5, reward: 10,  color: '#ff6b6b', size: 15, name: 'Grunt' },
-  fast:   { hp: 50,  speed: 2.2, reward: 15,  color: '#ffff00', size: 12, name: 'Scout' },
-  tank:   { hp: 300, speed: 0.8, reward: 30,  color: '#8b0000', size: 22, name: 'Brute' },
-  healer: { hp: 120, speed: 1.2, reward: 25,  color: '#00ff88', size: 16, name: 'Medic' },
-  boss:   { hp: 1000,speed: 0.5, reward: 100, color: '#4a0080', size: 30, name: 'Overlord' },
-  flying: { hp: 60, speed: 2.0, reward: 20, color: '#ffa500', size: 14, name: 'Drone', flying: true },
-  finalBoss: { hp: 10000, speed: 0.4, reward: 1000, color: '#ff0000', size: 50, name: 'Final Boss' }
+  basic:  { hp: 80,  speed: 1.8, reward: 10,  color: '#ff6b6b', size: 15, name: 'Grunt' },
+  fast:   { hp: 50,  speed: 2.7, reward: 15,  color: '#ffff00', size: 12, name: 'Scout' },
+  tank:   { hp: 300, speed: 1.1, reward: 30,  color: '#8b0000', size: 22, name: 'Brute' },
+  healer: { hp: 120, speed: 1.5, reward: 25,  color: '#00ff88', size: 16, name: 'Medic' },
+  boss:   { hp: 1000,speed: 0.7, reward: 100, color: '#4a0080', size: 30, name: 'Overlord' },
+  flying: { hp: 60, speed: 2.4, reward: 20, color: '#ffa500', size: 14, name: 'Drone', flying: true },
+  finalBoss: { hp: 10000, speed: 0.6, reward: 1000, color: '#ff0000', size: 50, name: 'Final Boss' }
 };
 
 // ═══════════════════════════════════════════════════════
@@ -983,6 +1000,7 @@ function init() {
   selectedTower = null;
   towers = [];
   enemies = [];
+  summonedUnits = [];
   projectiles = [];
   particles = [];
   floatingTexts = [];
@@ -1040,7 +1058,9 @@ function updateUI() {
   const dnEl = document.getElementById('dayNightIndicator');
   if (dnEl) dnEl.textContent = isNight ? '🌙 Night' : '☀ Day';
   startWaveBtn.disabled = waveInProgress;
-  startWaveBtn.textContent = waveInProgress ? '⚔️ Wave in Progress...' : (autoWave ? '⚔️ Auto: ON (click to toggle)' : '⚔️ Start Wave (click to toggle auto)');
+  // Allow the button to be clickable during waves to toggle auto-skip logic
+  startWaveBtn.disabled = false;
+  startWaveBtn.textContent = waveInProgress ? (autoWave ? '⚔️ Auto: ON' : '⚔️ Auto: OFF') : (autoWave ? '⚔️ Auto: ON (click to toggle)' : '⚔️ Start Wave (click to toggle auto)');
   towerBtns.forEach(btn => {
     const type = btn.dataset.tower;
     if (TOWER_TYPES[type]) {
@@ -1261,7 +1281,11 @@ function getComboMultiplier() {
 // ═══════════════════════════════════════════════════════
 function startWave() {
   if (shopOpen) closeShop();
-  if (waveInProgress) return;
+  if (waveInProgress) {
+    autoWave = !autoWave;
+    updateUI();
+    return;
+  }
   if (!endlessMode && currentWave >= maxWaves) {
     autoWave = !autoWave;
     updateUI();
@@ -1409,6 +1433,7 @@ function update() {
   for (let step = 0; step < gameSpeed; step++) {
     updateEnemies();
     updateTowers();
+    updateSummonedUnits();
     updateProjectiles();
     checkDeadEnemies();
     updateParticles();
@@ -1462,6 +1487,72 @@ function updateEnemies() {
   }
 }
 
+function spawnSummonedUnit(tower) {
+  const type = TOWER_TYPES[tower.type];
+  // Find nearest path segment to spawn on
+  let closestDist = Infinity;
+  let spawnPos = { x: tower.x, y: tower.y };
+  let pathIdx = 0;
+
+  const paths = Array.isArray(PATH[0]) ? PATH : [PATH];
+  const p = paths[0]; 
+
+  for (let i = 0; i < p.length - 1; i++) {
+    let dist = distToSegment(tower.x, tower.y, p[i], p[i + 1]);
+    if (dist < closestDist) {
+      closestDist = dist;
+      pathIdx = i;
+      const v = p[i], w = p[i+1];
+      const l2 = (w.x - v.x) ** 2 + (w.y - v.y) ** 2;
+      let t = Math.max(0, Math.min(1, ((tower.x - v.x) * (w.x - v.x) + (tower.y - v.y) * (w.y - v.y)) / l2));
+      spawnPos = { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+    }
+  }
+
+  summonedUnits.push({
+    x: spawnPos.x, y: spawnPos.y,
+    hp: tower.unitHp || type.unitHp,
+    maxHp: tower.unitHp || type.unitHp,
+    owner: tower,
+    pathIndex: pathIdx,
+    speed: 0.5,
+    size: 15
+  });
+}
+
+function updateSummonedUnits() {
+  for (let i = summonedUnits.length - 1; i >= 0; i--) {
+    const unit = summonedUnits[i];
+    
+    // Move slowly backwards along path to create a defensive line
+    const p = PATH;
+    const target = p[unit.pathIndex];
+    if (target) {
+      const dx = target.x - unit.x, dy = target.y - unit.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < unit.speed) {
+        if (unit.pathIndex > 0) unit.pathIndex--;
+      } else {
+        unit.x += (dx / dist) * unit.speed;
+        unit.y += (dy / dist) * unit.speed;
+      }
+    }
+
+    // Collision with enemies
+    enemies.forEach(enemy => {
+      const dist = Math.hypot(unit.x - enemy.x, unit.y - enemy.y);
+      if (dist < unit.size + enemy.size) {
+        const dmg = 0.4; // Continuous contact damage
+        enemy.hp -= dmg;
+        unit.hp -= dmg;
+        if (Math.random() < 0.1) createParticles(unit.x, unit.y, '#fff', 1);
+      }
+    });
+
+    if (unit.hp <= 0) summonedUnits.splice(i, 1);
+  }
+}
+
 function updateTowers() {
   laserBeams = [];
   const dmgBoost = activePowerUp && activePowerUp.type === 'damageBoost';
@@ -1488,6 +1579,24 @@ function updateTowers() {
     }
     // Buff towers don't attack
     if (type.isBuff) return;
+
+    // Summoner Tower Logic
+    if (type.isSummoner) {
+      tower.cooldown = Math.max(0, tower.cooldown - 1);
+      if (tower.cooldown <= 0) {
+        let currentUnits = summonedUnits.filter(u => u.owner === tower).length;
+        const maxUnits = type.maxUnits + (tower.extraMaxUnits || 0);
+        if (currentUnits < maxUnits) {
+          for (let i = 0; i < type.unitsPerSummon; i++) {
+            if (currentUnits + i < maxUnits) spawnSummonedUnit(tower);
+          }
+          tower.cooldown = effectiveFireRate;
+          if (type.sfx) type.sfx();
+        }
+      }
+      return;
+    }
+
     // Laser tower: continuous beam
     if (type.isLaser) {
       tower.cooldown = Math.max(0, tower.cooldown - 1);
@@ -1737,9 +1846,9 @@ function checkWaveComplete() {
       addFloatingText(350, 260, 'ENDLESS MODE ACTIVATED!', '#ff4444');
     }
     if (autoWave && currentWave < maxWaves) {
-      setTimeout(() => { if (gameRunning && autoWave) startWave(); }, 1500);
+      setTimeout(() => { if (gameRunning && autoWave) startWave(); }, 500);
     } else if (endlessMode && autoWave) {
-      setTimeout(() => { if (gameRunning && autoWave) startWave(); }, 2000);
+      setTimeout(() => { if (gameRunning && autoWave) startWave(); }, 1000);
     }
     if (currentWave >= maxWaves && !endlessMode) {
       // Will enter endless mode next call
@@ -1783,6 +1892,7 @@ function draw() {
   else { drawNatureBackground(); }
   drawPath();
   drawPowerUps();
+  drawSummonedUnits();
   drawTowers();
   drawEnemies();
   drawProjectiles();
@@ -2319,6 +2429,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '6') selectTower('poison');
   if (e.key === '7') selectTower('laser');
   if (e.key === '8') selectTower('buff');
+  if (e.key === '9') selectTower('summon');
 
   if (e.key === 's' || e.key === 'S') {
     if (shopOpen) closeShop();

@@ -166,6 +166,9 @@ canvas {
 .tower-buff { border-color: rgba(255, 215, 0, 0.4); }
 .tower-buff:hover:not(:disabled) { border-color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
 .tower-buff.selected { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+.tower-summon { border-color: rgba(255, 105, 180, 0.4); }
+.tower-summon:hover:not(:disabled) { border-color: #ff69b4; box-shadow: 0 0 15px rgba(255, 105, 180, 0.4); }
+.tower-summon.selected { border-color: #ff69b4; box-shadow: 0 0 20px rgba(255, 105, 180, 0.6); }
 
 /* ── Upgrade / Sell Buttons ── */
 #towerInfo {
