@@ -90,6 +90,10 @@ const CITY_PLACEMENT_ZONES = [
 let shakeAmount = 0;
 let shakeDuration = 0;
 
+// ── Wave Announcement ──
+let waveAnnounceTimer = 0;
+let waveAnnounceText = '';
+
 // ── Sound System (Web Audio API) ──
 let audioCtx = null;
 function initAudio() {
@@ -266,8 +270,8 @@ const TOWER_TYPES = {
     ]
   },
   summon: {
-    cost: 180, damage: 15, range: 120, fireRate: 120, color: '#ff69b4', name: 'Summon Tower', projectileColor: '#ff69b4', projectileSpeed: 0, icon: '🧹', desc: 'Summons blockheads (50 HP) to block enemies', upgradeCost: 120, upgradeDmg: 5, upgradeRange: 15, sfx: sfxBuff, unlockLevel: 7,
-    isSummoner: true, maxUnits: 12, unitsPerSummon: 3, unitHp: 50,
+    cost: 180, damage: 15, range: 120, fireRate: 120, color: '#ff69b4', name: 'Summon Tower', projectileColor: '#ff69b4', projectileSpeed: 0, icon: '🧹', desc: 'Summons blockheads (100 HP) to block enemies', upgradeCost: 120, upgradeDmg: 5, upgradeRange: 15, sfx: sfxBuff, unlockLevel: 7,
+    isSummoner: true, maxUnits: 12, unitsPerSummon: 3, unitHp: 100,
     upgradePaths: [
         { id: 'horde', name: 'Horde', desc: '+4 max units, +1 per spawn', effect: { maxUnits: 4, unitsPerSummon: 1 } },
         { id: 'tough', name: 'Tough heads', desc: '+30 unit HP', effect: { unitHp: 30 } }
@@ -1061,6 +1065,9 @@ function updateUI() {
   // Allow the button to be clickable during waves to toggle auto-skip logic
   startWaveBtn.disabled = false;
   startWaveBtn.textContent = waveInProgress ? (autoWave ? '⚔️ Auto: ON' : '⚔️ Auto: OFF') : (autoWave ? '⚔️ Auto: ON (click to toggle)' : '⚔️ Start Wave (click to toggle auto)');
+  
+  // Button remains enabled to allow toggling auto-wave during combat
+  startWaveBtn.textContent = waveInProgress ? (autoWave ? '⚔️ Auto: ON' : '⚔️ Auto: OFF') : '⚔️ Start Wave';
   towerBtns.forEach(btn => {
     const type = btn.dataset.tower;
     if (TOWER_TYPES[type]) {
@@ -1376,7 +1383,12 @@ function placeTower(x, y) {
     cooldown: 0, angle: 0, level: 1, kills: 0,
     buffRadius: type.buffRadius || 0,
     buffDmgMult: type.buffDmgMult || 1,
-    buffFireRateMult: type.buffFireRateMult || 1
+    buffFireRateMult: type.buffFireRateMult || 1,
+    // Summoner specific init
+    maxUnits: type.maxUnits || 0,
+    unitsPerSummon: type.unitsPerSummon || 0,
+    unitHp: type.unitHp || 0,
+    extraMaxUnits: 0
   });
   createParticles(x, y, type.color, 10);
   addFloatingText(x, y - 30, '-' + type.cost + '💰', '#ff6b6b');
@@ -1388,7 +1400,7 @@ function canPlaceTower(x, y) {
   const pathsToCheck = Array.isArray(PATH[0]) ? PATH : [PATH];
   for (let p of pathsToCheck) {
     for (let i = 0; i < p.length - 1; i++) {
-      if (distToSegment(x, y, p[i], p[i + 1]) < 40) return false;
+      if (distToSegment(x, y, p[i], p[i + 1]) < 35) return false;
     }
   }
   for (const tower of towers) {
@@ -1465,6 +1477,12 @@ function updateEnemies() {
     if (isNight) speed *= 1.3; // Night speed boost
     if (enemy.slowTimer > 0) { speed *= enemy.slowAmount; enemy.slowTimer--; }
     if (enemy.type === 'healer') { enemies.forEach(e => { if (e !== enemy && e.hp > 0 && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) { e.hp = Math.min(e.maxHp, e.hp + 0.3); } }); }
+    // Blocked by summon unit?
+    if (enemy.blocked && enemy.blockTimer > 0) {
+      enemy.blockTimer--;
+      if (enemy.blockTimer <= 0) enemy.blocked = false;
+      continue; // Skip movement this frame
+    }
     // Flying enemies move in a straight line from start to end
     const currentPath = enemy.path || (Array.isArray(PATH[0]) ? PATH[0] : PATH);
     if (enemy.flying) {
@@ -1516,8 +1534,9 @@ function spawnSummonedUnit(tower) {
     owner: tower,
     path: chosenPath,
     pathIndex: pathIdx,
-    speed: 0.5,
-    size: 15
+    speed: 1.0, // Faster movement
+    size: 15,
+    damage: tower.unitHp ? Math.max(1, Math.floor(tower.unitHp * 0.1)) : 5 // Scale with HP
   });
 }
 
@@ -1539,14 +1558,19 @@ function updateSummonedUnits() {
       }
     }
 
-    // Collision with enemies
+    // Collision with enemies - block and damage
     enemies.forEach(enemy => {
       const dist = Math.hypot(unit.x - enemy.x, unit.y - enemy.y);
       if (dist < unit.size + enemy.size) {
-        const dmg = 0.4; // Continuous contact damage
+        // Block enemy movement
+        enemy.blocked = true;
+        enemy.blockTimer = 2; // Block for 2 frames (very short, but will be refreshed each frame if still in contact)
+        // Deal contact damage to enemy
+        const dmg = unit.damage || 1.0;
         enemy.hp -= dmg;
-        unit.hp -= dmg;
-        if (Math.random() < 0.1) createParticles(unit.x, unit.y, '#fff', 1);
+        // Unit takes damage from enemy
+        unit.hp -= 0.2; // Reduced from 0.4 to make units more durable
+        if (Math.random() < 0.15) createParticles(unit.x, unit.y, '#fff', 1);
       }
     });
 
@@ -1586,7 +1610,7 @@ function updateTowers() {
       tower.cooldown = Math.max(0, tower.cooldown - 1);
       if (tower.cooldown <= 0) {
         let currentUnits = summonedUnits.filter(u => u.owner === tower).length;
-        const maxUnits = type.maxUnits + (tower.extraMaxUnits || 0);
+        const maxUnits = tower.maxUnits;
         if (currentUnits < maxUnits) {
           for (let i = 0; i < type.unitsPerSummon; i++) {
             if (currentUnits + i < maxUnits) spawnSummonedUnit(tower);
@@ -1778,8 +1802,12 @@ function spawnPowerUpOnMap() {
     x = 50 + Math.random() * (BASE_W - 100);
     y = 50 + Math.random() * (BASE_H - 100);
     valid = true;
-    for (let i = 0; i < PATH.length - 1; i++) {
-      if (distToSegment(x, y, PATH[i], PATH[i + 1]) < 50) { valid = false; break; }
+    const pathsToCheck = Array.isArray(PATH[0]) ? PATH : [PATH];
+    for (let p of pathsToCheck) {
+      for (let i = 0; i < p.length - 1; i++) {
+        if (distToSegment(x, y, p[i], p[i + 1]) < 50) { valid = false; break; }
+      }
+      if (!valid) break;
     }
     if (valid) break;
   }
@@ -2128,6 +2156,32 @@ function drawTowers() {
         ctx.textBaseline = 'middle';
         ctx.fillText(type.icon, tower.x, tower.y);
     }
+    // Show unit count for summoner towers
+    if (type.isSummoner) {
+      const currentUnits = summonedUnits.filter(u => u.owner === tower).length;
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ff69b4';
+      ctx.fillText(currentUnits + '/' + tower.maxUnits, tower.x, tower.y + 42);
+    }
+  });
+}
+
+function drawSummonedUnits() {
+  summonedUnits.forEach(unit => {
+    if (blockheadImg.complete && blockheadImg.naturalWidth !== 0) {
+      ctx.drawImage(blockheadImg, unit.x - unit.size, unit.y - unit.size, unit.size * 2, unit.size * 2);
+    } else {
+      ctx.fillStyle = '#ff69b4';
+      ctx.fillRect(unit.x - 8, unit.y - 8, 16, 16);
+    }
+    // Simple HP bar for summoned units
+    const hpW = 20, hpH = 3;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(unit.x - 10, unit.y - unit.size - 5, hpW, hpH);
+    const hpRatio = unit.hp / unit.maxHp;
+    ctx.fillStyle = '#ff69b4';
+    ctx.fillRect(unit.x - 10, unit.y - unit.size - 5, hpW * hpRatio, hpH);
   });
 }
 
@@ -2267,10 +2321,6 @@ function drawPlacementPreview() {
   ctx.stroke();
   ctx.globalAlpha = 1;
 }
-
-// ── Wave Announcement ──
-let waveAnnounceTimer = 0;
-let waveAnnounceText = '';
 
 function drawWaveAnnouncement() {
   if (waveAnnounceTimer <= 0) return;
@@ -2457,3 +2507,17 @@ document.querySelectorAll('.path-btn').forEach(btn => {
     chooseTowerPath(btn.dataset.pathId, btn.dataset.towerType);
   });
 });
+
+// ── Lobby Listeners ──
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
+});
+document.querySelectorAll('.map-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMap(btn.dataset.map));
+});
+const lobbyStartBtn = document.querySelector('.lobby-start-btn');
+if (lobbyStartBtn) lobbyStartBtn.addEventListener('click', startGame);
+const changelogBtn = document.querySelector('.lobby-changelog-btn');
+if (changelogBtn) changelogBtn.addEventListener('click', toggleChangelog);
+const clCloseBtn = document.querySelector('.changelog-close');
+if (clCloseBtn) clCloseBtn.addEventListener('click', toggleChangelog);
