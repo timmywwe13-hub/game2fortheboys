@@ -77,13 +77,15 @@ const XP_PER_KILL = 12;
 const XP_PER_WAVE = 30;
 const MAX_TOWERS = 35;
 const CITY_PLACEMENT_ZONES = [
-  { x: 10, y: 10, w: 160, h: 120 },
-  { x: 530, y: 10, w: 160, h: 120 },
-  { x: 10, y: 430, w: 160, h: 150 },
-  { x: 530, y: 430, w: 160, h: 150 },
-  { x: 10, y: 220, w: 120, h: 140 },
-  { x: 560, y: 220, w: 120, h: 140 },
-  { x: 250, y: 340, w: 160, h: 120 }
+  { x: 10, y: 10, w: 200, h: 150 },
+  { x: 500, y: 10, w: 200, h: 150 },
+  { x: 10, y: 430, w: 200, h: 180 },
+  { x: 500, y: 430, w: 200, h: 180 },
+  { x: 10, y: 220, w: 160, h: 170 },
+  { x: 540, y: 220, w: 160, h: 170 },
+  { x: 250, y: 340, w: 200, h: 150 },
+  { x: 300, y: 80, w: 180, h: 120 },
+  { x: 300, y: 450, w: 180, h: 120 }
 ];
 
 // ── Screen Shake ──
@@ -1527,6 +1529,10 @@ function spawnSummonedUnit(tower) {
     }
   });
 
+  // Spawn at the base (end of path) and move backwards towards start
+  spawnPos = { x: chosenPath[chosenPath.length-1].x, y: chosenPath[chosenPath.length-1].y };
+  pathIdx = chosenPath.length - 1;
+
   summonedUnits.push({
     x: spawnPos.x, y: spawnPos.y,
     hp: tower.unitHp || type.unitHp,
@@ -1551,11 +1557,25 @@ function updateSummonedUnits() {
       const dx = target.x - unit.x, dy = target.y - unit.y;
       const dist = Math.hypot(dx, dy);
       if (dist < unit.speed) {
-        if (unit.pathIndex > 0) unit.pathIndex--;
+        // Reached the target waypoint
+        if (unit.pathIndex > 0) {
+          unit.pathIndex--;
+          // Snap to the waypoint we just reached to avoid drift
+          unit.x = target.x;
+          unit.y = target.y;
+        } else {
+          // Reached the start of the path, despawn
+          summonedUnits.splice(i, 1);
+          continue;
+        }
       } else {
         unit.x += (dx / dist) * unit.speed;
         unit.y += (dy / dist) * unit.speed;
       }
+    } else {
+      // Invalid path, despawn
+      summonedUnits.splice(i, 1);
+      continue;
     }
 
     // Collision with enemies - block and damage
