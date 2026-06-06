@@ -852,7 +852,10 @@ function drawCityBackground() {
 // MINI-MAP
 // ═══════════════════════════════════════════════════════
 function drawMiniMap() {
-  const mmW = 100, mmH = 86;
+  // Increase minimap size on larger screens (e.g., laptops)
+  const isLaptop = window.innerWidth >= 1200;
+  const mmW = isLaptop ? 150 : 100;
+  const mmH = isLaptop ? 129 : 86;
   const mmX = BASE_W - mmW - 8, mmY = 8;
   const sx = mmW / BASE_W, sy = mmH / BASE_H;
 
